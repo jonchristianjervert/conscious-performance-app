@@ -5,33 +5,48 @@
 1.  **Node.js**: Download and install from [nodejs.org](https://nodejs.org).
 2.  **Firebase CLI**: Run `npm install -g firebase-tools` in your terminal.
 
-## Setup
+## Quick Setup (Mac/Linux)
 
-1.  **Install Dependencies**
+1.  **Download & Unzip** the project.
+2.  **Open Terminal** and navigate to the folder:
+    *   Type `cd ` (with a space).
+    *   Drag the folder into the terminal window.
+    *   Press Enter.
+3.  **Install Dependencies**:
     ```bash
     npm install
     ```
-
-2.  **Configure Environment Variables**
-    Create a file named `.env` in the root directory.
-    Add your Google Gemini API Key:
+4.  **Create API Key (The Magic Command)**:
+    Replace `YOUR_KEY` below with your actual Gemini API Key and run:
+    ```bash
+    echo "VITE_API_KEY=YOUR_ACTUAL_KEY_HERE" > .env
     ```
-    VITE_API_KEY=your_api_key_here
+5.  **Deploy**:
+    ```bash
+    npm run deploy
     ```
 
-## Deployment
+## Alternative: Deploy via GitHub & Vercel
 
-To deploy to the web:
+If the web uploader fails, run these commands in your terminal to push your code to GitHub manually:
+
+1.  Create a new repository on GitHub.
+2.  Run these commands in your project folder:
 
 ```bash
-# 1. Build the project
-npm run build
-
-# 2. Login to Google (if not logged in)
-firebase login
-
-# 3. Deploy to Firebase Hosting
-firebase deploy
+git init
+git add .
+git commit -m "Ready for deployment"
+git branch -M main
+# Replace the URL below with YOUR GitHub repository URL
+git remote add origin https://github.com/YOUR_USERNAME/conscious-human-performance.git
+git push -u origin main
 ```
 
-The terminal will provide you with a URL (e.g., `https://conscious-human-performance.web.app`) where your app is live.
+## Troubleshooting
+
+**Error: "ENOENT: no such file or directory"**
+This means your terminal is not inside the project folder. See Step 2 above (dragging the folder into the terminal).
+
+**Error: "Command not found: npm"**
+You need to install Node.js. Close and reopen your terminal after installing.

@@ -7,6 +7,7 @@ import { submitAssessment, getPreviousSubmission } from './services/mockData';
 import { sendSubmissionEmails } from './services/automation';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
+import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, Star, Activity, PlayCircle, Zap, Heart, Users, Briefcase, DollarSign, Dumbbell, HeartPulse, Mountain } from 'lucide-react';
 
 // Lazy Load Admin Components
 const Login = React.lazy(() => import('./components/Admin/Login'));
@@ -35,22 +36,17 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white p-4">
           <h2 className="text-2xl font-bold text-red-500 mb-4">Dashboard Error</h2>
-          <p className="text-gray-300 mb-4">Something went wrong loading the dashboard components.</p>
-          <div className="bg-gray-800 p-4 rounded text-xs font-mono text-red-300 max-w-2xl overflow-auto mb-4">
-            {this.state.error?.toString()}
-          </div>
           <button 
             onClick={() => window.location.reload()}
-            className="bg-orange-500 hover:bg-orange-600 px-6 py-2 rounded font-bold transition-colors"
+            className="bg-orange-500 hover:bg-orange-600 px-6 py-2 rounded font-bold"
           >
-            Reload Application
+            Reload
           </button>
         </div>
       );
     }
-
     return this.props.children;
   }
 }
@@ -61,22 +57,15 @@ const initialAnswers = SECTIONS.reduce((acc, section) => {
 }, {} as Answers);
 
 const App: React.FC = () => {
-  // --- Routing State ---
-  // Views: 'welcome', 'assessment', 'lead-capture', 'results', 'admin-login', 'admin-dashboard'
   const [view, setView] = useState<string>('welcome');
-  
-  // --- Client Assessment State ---
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
   const [userInfo, setUserInfo] = useState({ name: '', email: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousScores, setPreviousScores] = useState<Scores | null>(null);
-
-  // --- Admin State ---
   const [adminTab, setAdminTab] = useState('overview');
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
 
-  // --- Handlers ---
   const handleAnswerChange = (sectionId: string, questionIndex: number, isChecked: boolean) => {
     setAnswers(prev => ({
       ...prev,
@@ -88,7 +77,7 @@ const App: React.FC = () => {
       const scores: Partial<Scores> = {};
       const scoreMap: { [key: string]: keyof Scores } = {
           A: 'Energy', B: 'Awareness', C: 'Love', D: 'Tribe',
-          E: 'Career', F: 'Abundance', G: 'Fitness', 'H': 'Health',
+          E: 'Career', F: 'Abundance', 'G': 'Fitness', 'H': 'Health',
       };
       
       let scoreI = 0;
@@ -115,18 +104,12 @@ const App: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-        // 1. Check for previous history (Growth Chart)
         const prevSubmission = await getPreviousSubmission(userInfo.email);
         if (prevSubmission) {
             setPreviousScores(prevSubmission.scores);
         }
-
-        // 2. Save current submission
         await submitAssessment(userInfo, scores, answers);
-        
-        // 3. Trigger Email Automation (Mock or Webhook)
         await sendSubmissionEmails(userInfo, scores);
-
         setView('results');
     } catch (error) {
         console.error("Submission failed", error);
@@ -145,7 +128,7 @@ const App: React.FC = () => {
             margin: 0.5,
             filename: `${userInfo.name.replace(/\s+/g, '_')}_Performance_Profile.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, backgroundColor: '#111827' }, // match bg-gray-900
+            html2canvas: { scale: 2, backgroundColor: '#030305' }, 
             jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
           };
           html2pdf().set(opt).from(element).save();
@@ -153,28 +136,76 @@ const App: React.FC = () => {
           alert("PDF generator not loaded. Please refresh and try again.");
       }
   };
-  
-  // --- Client Renders ---
 
+  // Icons map for sections to add visual flair
+  const getSectionIcon = (category: string) => {
+    if (category.includes('CONSCIOUSNESS')) return Zap;
+    if (category.includes('CONNECTION')) return Heart;
+    if (category.includes('CONTRIBUTION')) return Briefcase;
+    if (category.includes('COMMITMENT')) return Dumbbell;
+    return Mountain;
+  };
+  
   const renderWelcome = () => (
-    <div className="text-center max-w-3xl mx-auto pt-12 animate-fade-in">
-      <h1 className="text-4xl md:text-5xl font-black tracking-tight text-orange-500">Conscious Human Performance Program</h1>
-      <p className="mt-6 text-xl text-gray-300">Optimizing human performance through the Conscious Human Performance Model.</p>
-      <div className="mt-8 text-left text-gray-400 space-y-4 bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-xl">
-          <p>This assessment helps you understand and awaken your human potential in the areas of Consciousness (Spiritual Fulfillment), Connection (Relationships), Contribution (Career & Business), Commitment (Health & Fitness), and the experiential X Factor multiplier of Adventure (Life Experiences).</p>
-          <p>Be honest with yourself. This isn't an exercise to uncover what's wrong, but a way to gain perspective and awareness of new ways to operate and perceive the world.</p>
+    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+      {/* Ambient Background Orbs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-orange-600/10 rounded-full blur-[120px] animate-pulse-glow"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-glow" style={{animationDelay: '2s'}}></div>
       </div>
-      <button 
-        onClick={() => setView('assessment')}
-        className="mt-10 bg-orange-500 hover:bg-orange-600 text-gray-900 font-bold text-lg py-4 px-8 rounded-lg transition-transform transform hover:scale-105 shadow-lg shadow-orange-500/20"
-      >
-        Start Assessment
-      </button>
-      
-      <div className="mt-24 pt-8 border-t border-gray-800">
-        <button onClick={() => setView('admin-login')} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
-            Admin Portal Access
-        </button>
+
+      <div className="relative z-10 text-center max-w-5xl mx-auto px-6 animate-fade-in">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-orange-400 text-xs font-bold uppercase tracking-widest mb-10 shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:bg-white/10 transition-colors cursor-default">
+            <Sparkles size={14} className="text-orange-500 animate-pulse" />
+            <span>The Official Zerkers Model</span>
+        </div>
+        
+        {/* Hero Title */}
+        <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white mb-8 drop-shadow-2xl">
+          <span className="text-gradient block">Conscious</span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 block text-5xl md:text-7xl mt-2">Human Performance</span>
+        </h1>
+        
+        <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed mb-16 font-light">
+           Align your <span className="text-orange-500 font-medium glow-text-orange">Consciousness</span>, <span className="text-blue-400 font-medium">Connection</span>, <span className="text-green-400 font-medium">Contribution</span>, and <span className="text-purple-400 font-medium">Commitment</span> to unlock your highest potential.
+        </p>
+
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-24">
+            <button 
+                onClick={() => setView('assessment')}
+                className="group relative px-12 py-6 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(249,115,22,0.4)] flex items-center gap-4 overflow-hidden ring-2 ring-orange-500/50 ring-offset-4 ring-offset-black"
+            >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                Start Assessment
+                <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button 
+                onClick={() => setView('admin-login')} 
+                className="px-10 py-6 bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-medium rounded-full transition-all border border-white/10 hover:border-white/30 backdrop-blur-sm flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+            >
+                <ShieldCheck size={18} />
+                Admin Portal
+            </button>
+        </div>
+
+        {/* Feature Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+            {[
+                { title: "Awareness", desc: "Identify blind spots in your spiritual and emotional fulfillment.", icon: Star, color: "text-orange-500" },
+                { title: "Connection", desc: "Evaluate the strength of your relationships and tribal bonds.", icon: Activity, color: "text-blue-500" },
+                { title: "Action", desc: "Measure your drive, career alignment, and physical vitality.", icon: PlayCircle, color: "text-green-500" }
+            ].map((item, i) => (
+                <div key={i} className="p-8 glass-panel rounded-3xl hover:border-white/20 transition-all duration-500 hover:-translate-y-2 group">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors`}>
+                        <item.icon className={`${item.color} opacity-80 group-hover:opacity-100 transition-opacity`} size={28} />
+                    </div>
+                    <h3 className="text-white font-bold text-xl mb-3 group-hover:text-orange-400 transition-colors">{item.title}</h3>
+                    <p className="text-base text-gray-400 leading-relaxed">{item.desc}</p>
+                </div>
+            ))}
+        </div>
       </div>
     </div>
   );
@@ -182,71 +213,87 @@ const App: React.FC = () => {
   const renderAssessment = () => {
     const currentSection = SECTIONS[currentSectionIndex];
     const progress = ((currentSectionIndex + 1) / SECTIONS.length) * 100;
-
-    const goToNextSection = () => {
-      if (currentSectionIndex < SECTIONS.length - 1) {
-        setCurrentSectionIndex(currentSectionIndex + 1);
-      }
-    };
-
-    const goToPrevSection = () => {
-      if (currentSectionIndex > 0) {
-        setCurrentSectionIndex(currentSectionIndex - 1);
-      }
-    };
+    const SectionIcon = getSectionIcon(currentSection.category);
 
     return (
-      <div className="max-w-4xl mx-auto pt-8">
-        <div className="mb-8">
-          <div className="flex justify-between mb-2">
-            <span className="text-base font-bold text-orange-400">Step {currentSectionIndex + 1} of {SECTIONS.length}</span>
-            <span className="text-sm font-medium text-gray-300">{Math.round(progress)}% Complete</span>
-          </div>
-          <div className="w-full bg-gray-700 rounded-full h-3">
-            <div className="bg-orange-500 h-3 rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }}></div>
-          </div>
+      <div className="min-h-screen flex flex-col max-w-4xl mx-auto pt-12 px-6 pb-16 relative">
+        {/* Progress Bar */}
+        <div className="fixed top-0 left-0 w-full h-2 bg-gray-900/50 z-50 backdrop-blur-sm">
+            <div 
+                className="h-full bg-gradient-to-r from-orange-600 to-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.6)] transition-all duration-700 ease-out"
+                style={{ width: `${progress}%` }}
+            ></div>
         </div>
 
-        <div key={currentSection.id} className="p-6 bg-gray-800 rounded-lg shadow-lg animate-fade-in border border-gray-700">
-          <h3 className="text-xs uppercase tracking-widest text-gray-400">{currentSection.category}</h3>
-          <h4 className="text-2xl font-bold text-orange-400 mt-1">{currentSection.title}</h4>
-          <div className="mt-6 space-y-4">
+        <div className="mb-12 mt-8 flex justify-between items-end">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                    <SectionIcon className="text-orange-500" size={24} />
+                </div>
+                <span className="text-orange-500 font-bold tracking-[0.2em] text-sm uppercase">{currentSection.category}</span>
+            </div>
+            <span className="text-gray-500 text-sm font-mono">{currentSectionIndex + 1} / {SECTIONS.length}</span>
+        </div>
+
+        {/* Question Card */}
+        <div key={currentSection.id} className="flex-1 animate-fade-in">
+          <div className="mb-10">
+              <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-2">{currentSection.title}</h2>
+              <div className="h-1 w-20 bg-orange-500 rounded-full"></div>
+          </div>
+
+          <div className="space-y-4">
             {currentSection.questions.map((q, i) => (
-              <label key={i} className="flex items-start p-3 bg-gray-700 rounded-md cursor-pointer hover:bg-gray-600 transition-colors">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-5 w-5 rounded border-gray-500 bg-gray-600 text-orange-500 focus:ring-orange-500"
-                  checked={answers[currentSection.id][i]}
-                  onChange={(e) => handleAnswerChange(currentSection.id, i, e.target.checked)}
-                />
-                <span className="ml-4 text-gray-300">{q.text}</span>
+              <label key={i} className={`
+                group flex items-center p-6 rounded-2xl cursor-pointer transition-all duration-300 border
+                ${answers[currentSection.id][i] 
+                    ? 'bg-gradient-to-r from-orange-900/20 to-orange-900/5 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.1)] translate-x-2' 
+                    : 'bg-[#121214]/60 border-white/5 hover:bg-[#1a1c23]/80 hover:border-white/10 hover:scale-[1.01]'
+                }
+              `}>
+                <div className={`
+                    relative flex items-center justify-center h-7 w-7 flex-shrink-0 rounded-lg border-2 transition-all duration-300
+                    ${answers[currentSection.id][i] ? 'border-orange-500 bg-orange-500' : 'border-gray-600 bg-transparent group-hover:border-gray-400'}
+                `}>
+                    <input
+                        type="checkbox"
+                        className="appearance-none absolute inset-0 cursor-pointer"
+                        checked={answers[currentSection.id][i]}
+                        onChange={(e) => handleAnswerChange(currentSection.id, i, e.target.checked)}
+                    />
+                    <ShieldCheck size={16} className={`text-white transform transition-transform duration-300 ${answers[currentSection.id][i] ? 'scale-100' : 'scale-0'}`} />
+                </div>
+                <span className={`ml-5 text-lg md:text-xl leading-snug transition-colors ${answers[currentSection.id][i] ? 'text-white font-medium' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                    {q.text}
+                </span>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="flex justify-between items-center mt-8">
+        {/* Navigation */}
+        <div className="pt-12 mt-4 flex justify-between items-center">
           <button
-            onClick={goToPrevSection}
+            onClick={() => currentSectionIndex > 0 && setCurrentSectionIndex(currentSectionIndex - 1)}
             disabled={currentSectionIndex === 0}
-            className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-gray-500 hover:text-white font-medium px-6 py-3 transition-colors disabled:opacity-0 hover:bg-white/5 rounded-xl"
           >
             Previous
           </button>
 
           {currentSectionIndex < SECTIONS.length - 1 ? (
             <button
-              onClick={goToNextSection}
-              className="bg-orange-500 hover:bg-orange-600 text-gray-900 font-bold py-3 px-6 rounded-lg transition-colors"
+              onClick={() => setCurrentSectionIndex(currentSectionIndex + 1)}
+              className="group bg-white text-black hover:bg-gray-200 font-bold py-4 px-10 rounded-full transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-3"
             >
-              Next
+              Next <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
           ) : (
             <button
               onClick={() => setView('lead-capture')}
-              className="bg-green-500 hover:bg-green-600 text-white font-bold text-lg py-4 px-8 rounded-lg transition-transform transform hover:scale-105"
+              className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold py-4 px-12 rounded-full transition-all transform hover:scale-105 shadow-[0_0_30px_rgba(249,115,22,0.5)]"
             >
-              Complete Assessment
+              Complete Profile
             </button>
           )}
         </div>
@@ -255,108 +302,135 @@ const App: React.FC = () => {
   };
 
   const renderLeadCapture = () => (
-    <div className="max-w-xl mx-auto pt-12 animate-fade-in">
-        <div className="bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700 text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">Almost There!</h2>
-            <p className="text-gray-400 mb-8">Enter your details below to unlock your full Performance Profile and AI insights.</p>
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-600/20 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="glass-panel p-10 md:p-16 rounded-3xl border border-white/10 text-center animate-fade-in w-full max-w-lg relative z-10 shadow-2xl">
+            <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(249,115,22,0.4)] transform rotate-3">
+                <Sparkles className="text-white w-10 h-10" />
+            </div>
+            <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Your Profile</h2>
+            <p className="text-gray-400 mb-10 text-lg">Unlock your personalized Conscious Human Performance report.</p>
             
             <form onSubmit={handleAssessmentComplete} className="space-y-6 text-left">
                 <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Full Name</label>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Full Name</label>
                     <input 
                         type="text" 
                         required
-                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                        className="input-field text-lg"
                         value={userInfo.name}
                         onChange={(e) => setUserInfo({...userInfo, name: e.target.value})}
-                        placeholder="John Doe"
+                        placeholder="Enter your name"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Email Address</label>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Email Address</label>
                     <input 
                         type="email" 
                         required
-                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                        className="input-field text-lg"
                         value={userInfo.email}
                         onChange={(e) => setUserInfo({...userInfo, email: e.target.value})}
-                        placeholder="john@example.com"
+                        placeholder="name@example.com"
                     />
                 </div>
                 <button 
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-gray-900 font-bold py-4 rounded-lg transition-colors flex justify-center"
+                    className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold py-5 rounded-xl transition-all mt-6 shadow-[0_0_30px_rgba(249,115,22,0.3)] text-lg hover:scale-[1.02]"
                 >
-                    {isSubmitting ? 'Generating Results...' : 'See My Results'}
+                    {isSubmitting ? 'Analyzing Data...' : 'Reveal Results'}
                 </button>
             </form>
-            <p className="mt-4 text-xs text-gray-500">We respect your privacy. Your results are confidential.</p>
         </div>
     </div>
   );
   
   const renderResults = () => (
-     <div id="results-container" className="max-w-5xl mx-auto pt-8 animate-fade-in bg-gray-900 p-4 md:p-8">
-      <div className="flex justify-between items-center mb-8 hide-on-pdf">
-          <h2 className="text-3xl md:text-4xl font-bold text-orange-500">Your Results</h2>
-          <div className="flex gap-3">
+     <div id="results-container" className="max-w-7xl mx-auto pt-12 px-6 pb-20 animate-fade-in min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6 hide-on-pdf">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+                <div className="h-1 w-10 bg-orange-500 rounded-full"></div>
+                <div className="text-orange-500 font-bold tracking-widest uppercase text-xs">Official Analysis</div>
+            </div>
+            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">Performance <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-600">Profile</span></h2>
+          </div>
+          <div className="flex gap-4">
             <button 
                 onClick={handleDownloadPDF}
-                className="text-white bg-green-600 hover:bg-green-500 px-4 py-2 rounded font-bold transition-colors shadow-lg"
+                className="bg-white text-black hover:bg-gray-200 px-8 py-3 rounded-full font-bold transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] text-sm flex items-center gap-2"
             >
-                Download Full Report
+                <div className="w-2 h-2 bg-black rounded-full"></div>
+                Download PDF
             </button>
             <button 
                 onClick={() => setView('welcome')}
-                className="text-gray-400 hover:text-white text-sm bg-gray-800 px-4 py-2 rounded border border-gray-700 transition-colors"
+                className="text-gray-400 hover:text-white text-sm border border-gray-700 hover:border-gray-500 px-8 py-3 rounded-full transition-colors backdrop-blur-sm"
             >
-                Exit
+                Close
             </button>
           </div>
       </div>
 
-      {/* Previous Score Badge */}
+      {/* Comparison Badge */}
       {previousScores && (
-         <div className="mb-6 bg-gray-800 border border-orange-500/30 p-4 rounded-lg flex items-center justify-between">
-             <div>
-                 <h4 className="text-white font-bold">Welcome Back, {userInfo.name}</h4>
-                 <p className="text-sm text-gray-400">We found your previous assessment. The dashed line indicates your prior results for comparison.</p>
+         <div className="mb-10 bg-gray-800/40 backdrop-blur-xl border border-orange-500/30 p-6 rounded-2xl flex items-center gap-6 shadow-[0_0_30px_rgba(0,0,0,0.3)] relative overflow-hidden">
+             <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-transparent pointer-events-none"></div>
+             <div className="bg-orange-500 p-4 rounded-xl shadow-lg shadow-orange-500/20 z-10">
+                <Activity className="text-white w-8 h-8" />
              </div>
-             <div className="hidden md:block text-orange-500 font-bold text-sm uppercase tracking-wider border border-orange-500/50 px-3 py-1 rounded">
-                 Growth Tracking Active
+             <div className="z-10">
+                <h4 className="text-white font-bold text-xl mb-1">Growth Tracking Active</h4>
+                <p className="text-sm text-gray-300">We've overlaid your previous results (dashed line) to visualize your progress over time.</p>
              </div>
          </div>
       )}
 
-      <div className="p-6 md:p-8 bg-gray-800 rounded-lg shadow-2xl border border-gray-700">
-        <h3 className="text-xl text-center text-white mb-2">{previousScores ? 'Performance Growth Profile' : `Conscious Performance Profile: ${userInfo.name}`}</h3>
-        <PerformanceModelChart scores={scores} previousScores={previousScores} />
-      </div>
-      <GeminiInsights scores={scores} />
-      <div className="text-center mt-12 pb-12 hide-on-pdf">
-        <button
-          onClick={() => {
-              setAnswers(initialAnswers);
-              setCurrentSectionIndex(0);
-              setUserInfo({name: '', email: ''});
-              setPreviousScores(null);
-              setView('assessment');
-          }}
-          className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-        >
-          Retake Assessment
-        </button>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-7 glass-panel p-8 md:p-14 rounded-[2.5rem] flex flex-col items-center relative overflow-hidden">
+           {/* Ambient Glow */}
+           <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+           <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+           
+           <h3 className="text-sm font-bold text-gray-400 mb-10 uppercase tracking-[0.2em] relative z-10 flex items-center gap-3">
+              <Sparkles size={14} className="text-orange-500" />
+              {previousScores ? 'Comparative Analysis' : 'Zerkers Model Visualization'}
+           </h3>
+           <div className="relative z-10 w-full flex justify-center">
+              <PerformanceModelChart scores={scores} previousScores={previousScores} />
+           </div>
+        </div>
+
+        <div className="lg:col-span-5 space-y-6">
+           <GeminiInsights scores={scores} />
+           
+           {/* Mini Score Grid for Quick Ref */}
+           <div className="glass-panel p-8 rounded-3xl">
+                <h4 className="text-gray-400 uppercase tracking-wider text-xs font-bold mb-6">Raw Score Breakdown</h4>
+                <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(scores).map(([key, val]) => (
+                        <div key={key} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5">
+                            <span className="text-sm text-gray-300">{key}</span>
+                            <span className={`font-mono font-bold ${typeof val === 'number' && val >= 6 ? 'text-green-400' : typeof val === 'number' && val >= 4 ? 'text-orange-400' : 'text-red-400'}`}>
+                                {typeof val === 'number' ? val.toFixed(1) : val}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+           </div>
+        </div>
       </div>
      </div>
   );
 
-  // --- Admin Render ---
-
+  // --- Admin Router ---
   if (view === 'admin-login') {
     return (
       <ErrorBoundary>
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-orange-500 bg-gray-900">Loading Admin Portal...</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-orange-500 bg-[#050505]">Loading...</div>}>
           <Login onLogin={() => setView('admin-dashboard')} />
         </Suspense>
       </ErrorBoundary>
@@ -366,12 +440,12 @@ const App: React.FC = () => {
   if (view === 'admin-dashboard') {
     return (
       <ErrorBoundary>
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-orange-500 bg-gray-900">Loading Dashboard...</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-orange-500 bg-[#050505]">Loading Dashboard...</div>}>
           <DashboardLayout 
             currentTab={adminTab} 
             onTabChange={(tab) => {
               setAdminTab(tab);
-              setSelectedSubmissionId(null); // Reset selection on tab change
+              setSelectedSubmissionId(null); 
             }}
             onLogout={() => setView('welcome')}
           >
@@ -394,17 +468,16 @@ const App: React.FC = () => {
     );
   }
 
-  // --- Default Client Wrapper ---
   return (
-    <div className="min-h-screen p-4 sm:p-8 bg-gray-900">
+    <div className="min-h-screen selection:bg-orange-500/30 text-gray-100">
       <main>
         {view === 'welcome' && renderWelcome()}
         {view === 'assessment' && renderAssessment()}
         {view === 'lead-capture' && renderLeadCapture()}
         {view === 'results' && renderResults()}
       </main>
-      <footer className="text-center text-gray-600 mt-12 py-4 border-t border-gray-800 text-sm">
-        Copyright 2025 Zerkers.com
+      <footer className="text-center text-gray-600 py-10 border-t border-white/5 text-xs font-mono">
+        &copy; 2025 Conscious Human Performance. All Rights Reserved.
       </footer>
     </div>
   );
