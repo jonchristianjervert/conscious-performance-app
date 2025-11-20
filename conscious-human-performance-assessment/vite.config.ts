@@ -10,7 +10,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     base: '/', 
     define: {
-      // Map env variables to process.env so the frontend can read them
+      // This is critical for Vercel: Polyfill 'process.env' to prevent crashes in libraries
+      'process.env': {},
       'process.env.API_KEY': JSON.stringify(env.VITE_API_KEY || env.API_KEY),
       'process.env.NODE_ENV': JSON.stringify(mode),
     },
