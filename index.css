@@ -97,5 +97,78 @@ body {
 @media print {
   .hide-on-pdf { display: none !important; }
   body { background: white; color: black; }
-  .glass-panel { background: none; border: none; shadow: none; backdrop-filter: none; }
+}
+
+/* --- PDF GENERATION OVERRIDES --- */
+/* These styles apply when the .pdf-mode class is added during export */
+.pdf-mode {
+  background-image: none !important;
+  background-color: #ffffff !important;
+  color: #111827 !important; /* Gray 900 */
+}
+
+.pdf-mode .glass-panel {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important; /* Gray 200 */
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Keep the Chart Card Dark for branding/contrast */
+.pdf-mode .chart-container {
+  background: #111827 !important; /* Gray 900 */
+  border: 1px solid #374151 !important;
+  border-radius: 1.5rem !important;
+  color: white !important;
+}
+.pdf-mode .chart-container h3 {
+  color: #9ca3af !important; /* Gray 400 */
+}
+
+/* Force Text Colors for Readability on White */
+.pdf-mode h1, 
+.pdf-mode h2, 
+.pdf-mode h3, 
+.pdf-mode h4 {
+  color: #111827 !important;
+}
+
+.pdf-mode p, 
+.pdf-mode li, 
+.pdf-mode span {
+  color: #374151 !important; /* Gray 700 */
+}
+
+/* Override Prose (Rich Text) Inversion */
+.pdf-mode .prose-invert {
+  --tw-prose-body: #374151 !important;
+  --tw-prose-headings: #111827 !important;
+  --tw-prose-lead: #4b5563 !important;
+  --tw-prose-links: #111827 !important;
+  --tw-prose-bold: #111827 !important;
+  --tw-prose-counters: #6b7280 !important;
+  --tw-prose-bullets: #4b5563 !important;
+  --tw-prose-hr: #e5e7eb !important;
+  --tw-prose-quotes: #111827 !important;
+  --tw-prose-quote-borders: #e5e7eb !important;
+  --tw-prose-captions: #6b7280 !important;
+  --tw-prose-code: #111827 !important;
+  --tw-prose-pre-code: #e5e7eb !important;
+  --tw-prose-pre-bg: #1f2937 !important;
+  --tw-prose-th-borders: #d1d5db !important;
+  --tw-prose-td-borders: #e5e7eb !important;
+}
+
+/* Ensure Score Grid is readable */
+.pdf-mode .score-card {
+  background: #f3f4f6 !important; /* Gray 100 */
+  border: 1px solid #e5e7eb !important;
+}
+.pdf-mode .score-card span {
+  color: #111827 !important;
+}
+
+/* Hide specific decorative elements in PDF */
+.pdf-mode .ambient-glow {
+  display: none !important;
 }
