@@ -30,7 +30,7 @@ const GeminiInsights: React.FC<GeminiInsightsProps> = ({ scores }) => {
   };
 
   return (
-    <div className="mt-12 p-6 bg-gray-800 rounded-lg shadow-xl">
+    <div className="mt-12 p-6 bg-gray-800 rounded-lg shadow-xl insights-card glass-panel">
       <h3 className="text-2xl font-bold text-orange-500 mb-4">Personalized AI Insights</h3>
       <p className="text-gray-400 mb-6">
         Get personalized, actionable feedback on your results from a generative AI model trained to act as a Conscious Human Performance Strategist.
@@ -54,7 +54,7 @@ const GeminiInsights: React.FC<GeminiInsightsProps> = ({ scores }) => {
       {error && <p className="mt-4 text-red-400">{error}</p>}
       
       {insights && (
-        <div className="mt-6 p-4 border border-gray-700 rounded-md bg-gray-900">
+        <div className="mt-6 p-4 border border-gray-700 rounded-md bg-gray-900 glass-card">
           <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: insights }} />
         </div>
       )}
