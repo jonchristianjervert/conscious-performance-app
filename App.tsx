@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, Suspense } from 'react';
 import { SECTIONS } from './constants';
 import { Answers, Scores } from './types';
@@ -124,19 +123,31 @@ const App: React.FC = () => {
       if (!element) return;
 
       setGeneratingPDF(true);
+      // Add specific class to handle print styling (white background, high contrast)
+      element.classList.add('pdf-mode');
+
       try {
-        // @ts-ignore - Allow dynamic import without strict typing for external lib
+        // @ts-ignore - Dynamic import
         const html2pdfModule = await import('html2pdf.js');
         const html2pdf = html2pdfModule.default;
         
         if (html2pdf) {
             const opt = {
-              margin: 0.5,
+              margin: [0.5, 0.5] as [number, number],
               filename: `${userInfo.name.replace(/\s+/g, '_')}_Performance_Profile.pdf`,
               image: { type: 'jpeg' as const, quality: 0.98 },
-              html2canvas: { scale: 2, backgroundColor: '#030305' }, 
+              html2canvas: { 
+                  scale: 2, 
+                  useCORS: true,
+                  backgroundColor: '#ffffff', // Force white background
+                  logging: false
+              }, 
               jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
             };
+            
+            // Wait a tick for CSS to apply
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             await html2pdf().set(opt).from(element).save();
         } else {
             alert("PDF generator failed to load.");
@@ -145,6 +156,8 @@ const App: React.FC = () => {
         console.error("PDF generation error:", err);
         alert("Could not generate PDF. Please try again.");
       } finally {
+        // Remove the class to restore Dark Mode
+        element.classList.remove('pdf-mode');
         setGeneratingPDF(false);
       }
   };
@@ -407,10 +420,10 @@ const App: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-7 glass-panel p-8 md:p-14 rounded-[2.5rem] flex flex-col items-center relative overflow-hidden">
+        <div className="lg:col-span-7 glass-panel chart-container p-8 md:p-14 rounded-[2.5rem] flex flex-col items-center relative overflow-hidden">
            {/* Ambient Glow */}
-           <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
-           <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+           <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none ambient-glow"></div>
+           <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[100px] pointer-events-none ambient-glow"></div>
            
            <h3 className="text-sm font-bold text-gray-400 mb-10 uppercase tracking-[0.2em] relative z-10 flex items-center gap-3">
               <Sparkles size={14} className="text-orange-500" />
@@ -425,7 +438,7 @@ const App: React.FC = () => {
            <GeminiInsights scores={scores} />
            
            {/* Mini Score Grid for Quick Ref */}
-           <div className="glass-panel p-8 rounded-3xl">
+           <div className="glass-panel score-card p-8 rounded-3xl">
                 <h4 className="text-gray-400 uppercase tracking-wider text-xs font-bold mb-6">Raw Score Breakdown</h4>
                 <div className="grid grid-cols-2 gap-4">
                     {Object.entries(scores).map(([key, val]) => (
