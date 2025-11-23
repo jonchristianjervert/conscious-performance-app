@@ -1,3 +1,4 @@
+
 # Conscious Human Performance Assessment
 
 ## Prerequisites
@@ -16,37 +17,23 @@
     ```bash
     npm install
     ```
-4.  **Create API Key (The Magic Command)**:
-    Replace `YOUR_KEY` below with your actual Gemini API Key and run:
+4.  **Create API Keys**:
+    Run this command to set up your local environment keys (replace placeholders with actual keys):
     ```bash
-    echo "VITE_API_KEY=YOUR_ACTUAL_KEY_HERE" > .env
+    echo "VITE_API_KEY=YOUR_GEMINI_KEY_HERE\nVITE_FIREBASE_API_KEY=YOUR_FIREBASE_KEY_HERE" > .env
     ```
 5.  **Deploy**:
     ```bash
     npm run deploy
     ```
 
-## Alternative: Deploy via GitHub & Vercel
+## Vercel Deployment
 
-If the web uploader fails, run these commands in your terminal to push your code to GitHub manually:
-
-1.  Create a new repository on GitHub.
-2.  Run these commands in your project folder:
-
-```bash
-git init
-git add .
-git commit -m "Ready for deployment"
-git branch -M main
-# Replace the URL below with YOUR GitHub repository URL
-git remote add origin https://github.com/YOUR_USERNAME/conscious-human-performance.git
-git push -u origin main
-```
-
-## Troubleshooting
-
-**Error: "ENOENT: no such file or directory"**
-This means your terminal is not inside the project folder. See Step 2 above (dragging the folder into the terminal).
-
-**Error: "Command not found: npm"**
-You need to install Node.js. Close and reopen your terminal after installing.
+1.  Import project from GitHub.
+2.  **Environment Variables**:
+    *   `VITE_API_KEY`: Your Gemini API Key.
+    *   `VITE_FIREBASE_API_KEY`: Your Firebase Web API Key.
+3.  **Settings**:
+    *   Root Directory: Empty (if files are in root).
+    *   Output Directory: `dist`.
+4.  Deploy.
