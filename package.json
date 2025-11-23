@@ -14,7 +14,7 @@
     "lucide-react": "^0.378.0",
     "recharts": "^2.12.7",
     "html2pdf.js": "^0.10.1",
-    "@google/genai": "latest",
+    "@google/genai": "*",
     "vite": "^5.2.11",
     "@vitejs/plugin-react": "^4.3.0",
     "typescript": "^5.4.5",
