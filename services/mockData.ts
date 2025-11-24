@@ -1,12 +1,9 @@
-
 import { DashboardMetrics, Submission, Scores, Answers, QuestionStat, UserProfile } from '../types';
 import { SECTIONS } from '../constants';
 import { db, isConfigured } from './firebase';
 import { collection, addDoc, getDocs, query, orderBy, doc, getDoc, Timestamp, where, deleteDoc } from 'firebase/firestore';
 
 // --- FALLBACK MOCK GENERATORS ---
-// These are used if Firebase is not configured or fails.
-
 const NAMES = [
   "Alex Rivera", "Jordan Lee", "Casey Smith", "Taylor Morgan", "Riley Chen", 
   "Morgan Davis", "Quinn Campbell", "Avery Johnson", "Reese Wilson", "Charlie Brown",
@@ -84,8 +81,8 @@ const initMockData = () => {
             return;
         }
     } catch (e) {}
+    // Only generate seeds if nothing in storage
     const seed = generateHistory(35);
-    // Ensure Demo User
     const jonUser: Submission = {
         id: 'sub_jon_christian_fixed',
         userId: 'user_jon_christian',
@@ -104,9 +101,7 @@ const initMockData = () => {
     MOCK_SUBMISSIONS = [jonUser, ...seed];
 };
 
-// Initialize mock data just in case
 initMockData();
-
 
 // --- REAL DATA SERVICE FUNCTIONS ---
 
@@ -118,8 +113,6 @@ export const submitAssessment = async (
     // 1. REAL FIREBASE SUBMISSION
     if (isConfigured && db) {
         try {
-            // We create the user profile object directly on the submission for denormalization
-            // In a larger app, you'd check/create a separate Users collection first
             const submissionData = {
                 userId: `user_${user.email.replace(/[^a-zA-Z0-9]/g, '')}`,
                 userProfile: {
@@ -136,16 +129,14 @@ export const submitAssessment = async (
                 answers: answers,
                 metadata: {
                     device: navigator.userAgent.indexOf('Mobile') > -1 ? 'Mobile' : 'Desktop',
-                    location: 'Online', // Would need GeoIP service for real location
-                    completionTimeSeconds: 0, // Tracking not implemented in frontend yet
+                    location: 'Online', 
+                    completionTimeSeconds: 0, 
                 }
             };
-            
             await addDoc(collection(db, 'submissions'), submissionData);
             return;
         } catch (e) {
             console.error("Firebase Submit Error:", e);
-            // Fallthrough to mock save if real db fails
         }
     }
 
@@ -193,38 +184,25 @@ export const deleteSubmission = async (id: string): Promise<void> => {
 };
 
 export const getPreviousSubmission = async (email: string): Promise<Submission | null> => {
-    // 1. REAL FIREBASE FETCH
     if (isConfigured && db) {
         try {
-            // Note: To use 'orderBy' with 'where', Firebase often requires a composite index.
-            // For simplicity in "Test Mode" without indexes, we fetch by email and sort in memory.
             const q = query(
                 collection(db, 'submissions'), 
                 where('userProfile.email', '==', email)
             );
-            
             const querySnapshot = await getDocs(q);
             const docs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission));
-            
             if (docs.length === 0) return null;
-            
-            // Sort descending by date
             docs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-            
-            // We want the most recent one. 
-            // Logic assumption: This is called BEFORE saving the NEW submission, so the "latest" is the previous one.
             return docs[0];
         } catch (e) {
             console.error("Error fetching previous submission:", e);
             return null;
         }
     }
-
-    // 2. MOCK FETCH
     const previous = MOCK_SUBMISSIONS
         .filter(s => s.userProfile.email === email)
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        
     return previous.length > 0 ? previous[0] : null;
 };
 
@@ -234,6 +212,7 @@ export const fetchSubmissions = async (): Promise<Submission[]> => {
         try {
             const q = query(collection(db, 'submissions'), orderBy('timestamp', 'desc'));
             const querySnapshot = await getDocs(q);
+            // If we have real connection, return only real data. Do NOT merge with mocks.
             return querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -243,13 +222,12 @@ export const fetchSubmissions = async (): Promise<Submission[]> => {
         }
     }
 
-    // 2. MOCK FETCH
+    // 2. MOCK FETCH (Only if Firebase failed or not configured)
     await new Promise(resolve => setTimeout(resolve, 400));
     return MOCK_SUBMISSIONS;
 };
 
 export const fetchSubmissionById = async (id: string): Promise<Submission | undefined> => {
-    // 1. REAL FIREBASE FETCH
     if (isConfigured && db && !id.startsWith('sub_mock') && !id.startsWith('sub_jon')) {
         try {
             const docRef = doc(db, 'submissions', id);
@@ -261,8 +239,6 @@ export const fetchSubmissionById = async (id: string): Promise<Submission | unde
              console.error("Firebase Fetch ID Error:", e);
         }
     }
-
-    // 2. MOCK FETCH
     await new Promise(resolve => setTimeout(resolve, 300));
     return MOCK_SUBMISSIONS.find(s => s.id === id);
 };
@@ -270,11 +246,8 @@ export const fetchSubmissionById = async (id: string): Promise<Submission | unde
 export const fetchDashboardMetrics = async (): Promise<DashboardMetrics> => {
     let submissions: Submission[] = [];
 
-    // 1. GET DATA
     if (isConfigured && db) {
         try {
-             // In a production app, use aggregation queries or cloud functions
-             // For this scale, we just fetch all
              const q = query(collection(db, 'submissions'));
              const querySnapshot = await getDocs(q);
              submissions = querySnapshot.docs.map(d => d.data() as Submission);
@@ -297,7 +270,6 @@ export const fetchDashboardMetrics = async (): Promise<DashboardMetrics> => {
         };
     }
 
-    // 2. AGGREGATE DATA
     const total = submissions.length;
     const sumScores: Scores = {
       Energy: 0, Awareness: 0, Love: 0, Tribe: 0, Career: 0, Abundance: 0, Fitness: 0, Health: 0, Adventure: 0
@@ -316,7 +288,6 @@ export const fetchDashboardMetrics = async (): Promise<DashboardMetrics> => {
       avgScores[key] = parseFloat((avgScores[key] / total).toFixed(1));
     });
 
-    // Trend
     const daysMap = new Map<string, number>();
     submissions.forEach(sub => {
       const dateKey = sub.timestamp.split('T')[0];
@@ -328,7 +299,6 @@ export const fetchDashboardMetrics = async (): Promise<DashboardMetrics> => {
       .sort((a, b) => a.date.localeCompare(b.date))
       .slice(-30);
 
-    // Question Stats
     const questionAggregation: Record<string, { trueCount: number, total: number, category: string }> = {};
     SECTIONS.forEach(section => {
         section.questions.forEach((q) => {
@@ -362,7 +332,7 @@ export const fetchDashboardMetrics = async (): Promise<DashboardMetrics> => {
     return {
         totalSubmissions: total,
         averageScores: avgScores,
-        completionRate: 87.5, // Hard to calc without tracking 'starts'
+        completionRate: 87.5,
         submissionsLast30Days: trendData,
         questionStats: questionStats
     };
@@ -373,26 +343,21 @@ export const seedFirestore = async () => {
         alert("Firebase not configured.");
         return;
     }
-    // Add demo data
     const demoData = generateHistory(10);
     for (const sub of demoData) {
-         // Remove ID so Firestore generates it
          const { id, ...data } = sub;
          await addDoc(collection(db, 'submissions'), data);
     }
-    
-    // Add Jon Christian
     const jon = MOCK_SUBMISSIONS.find(s => s.id === 'sub_jon_christian_fixed');
     if (jon) {
          const { id, ...data } = jon;
          await addDoc(collection(db, 'submissions'), data);
     }
-    
     alert("Database Seeded! Reload page to see changes.");
 };
 
 export const downloadCSV = async () => {
-    const subs = await fetchSubmissions(); // Will get Real or Mock depending on config
+    const subs = await fetchSubmissions(); 
     
     const headers = ['ID', 'Name', 'Email', 'DOB', 'Occupation', 'Date', 'Energy', 'Awareness', 'Love', 'Tribe', 'Career', 'Abundance', 'Fitness', 'Health', 'Adventure'];
     const rows = subs.map(s => [
