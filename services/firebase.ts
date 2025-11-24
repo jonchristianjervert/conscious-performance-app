@@ -1,4 +1,3 @@
-
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
@@ -6,7 +5,7 @@ import { getAuth } from "firebase/auth";
 
 // SECURITY UPDATE: API Key is now loaded from Environment Variables
 // to satisfy GitHub Secret Scanning.
-const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+const apiKey = process.env.VITE_FIREBASE_API_KEY;
 
 const firebaseConfig = {
   apiKey: apiKey,
