@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, User, Calendar, Smartphone, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Smartphone, MapPin, Clock, CheckCircle, XCircle, Briefcase } from 'lucide-react';
 import { Submission } from '../../types';
 import { fetchSubmissionById } from '../../services/mockData';
 import { generateIndividualAdminReport } from '../../services/geminiService';
@@ -52,9 +51,21 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
             </div>
             
             <div className="space-y-3 text-sm text-gray-300">
+              {submission.userProfile.occupation && (
+                  <div className="flex items-center gap-3">
+                    <Briefcase size={16} className="text-gray-500" />
+                    <span>{submission.userProfile.occupation}</span>
+                  </div>
+              )}
+              {submission.userProfile.dob && (
+                  <div className="flex items-center gap-3">
+                    <User size={16} className="text-gray-500" />
+                    <span>DOB: {submission.userProfile.dob}</span>
+                  </div>
+              )}
               <div className="flex items-center gap-3">
                 <Calendar size={16} className="text-gray-500" />
-                <span>{new Date(submission.timestamp).toLocaleDateString()}</span>
+                <span>Submitted: {new Date(submission.timestamp).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Smartphone size={16} className="text-gray-500" />
@@ -63,10 +74,6 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
               <div className="flex items-center gap-3">
                 <MapPin size={16} className="text-gray-500" />
                 <span>{submission.metadata.location}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Clock size={16} className="text-gray-500" />
-                <span>{Math.floor(submission.metadata.completionTimeSeconds / 60)}m {submission.metadata.completionTimeSeconds % 60}s completion</span>
               </div>
             </div>
           </div>
