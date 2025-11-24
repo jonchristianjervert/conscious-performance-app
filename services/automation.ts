@@ -1,4 +1,3 @@
-
 import { Scores } from '../types';
 
 // --- EMAIL AUTOMATION SERVICE ---
@@ -10,7 +9,7 @@ import { Scores } from '../types';
 const WEBHOOK_URL = ""; 
 
 export const sendSubmissionEmails = async (
-  user: { name: string; email: string }, 
+  user: { name: string; email: string; dob?: string; occupation?: string }, 
   scores: Scores,
   pdfBlob?: Blob
 ) => {
