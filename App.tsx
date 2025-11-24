@@ -1,11 +1,11 @@
-import React, { useState, useMemo, Suspense } from 'react';
+import React, { useState, useMemo, Suspense, useRef } from 'react';
 import { SECTIONS } from './constants';
 import { Answers, Scores } from './types';
 import PerformanceModelChart from './components/PerformanceModelChart';
 import GeminiInsights from './components/GeminiInsights';
 import { submitAssessment, getPreviousSubmission } from './services/mockData';
 import { sendSubmissionEmails } from './services/automation';
-import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, Star, Activity, PlayCircle, Zap, Heart, Users, Briefcase, Dumbbell, Mountain, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, Star, Activity, PlayCircle, Zap, Heart, Users, Briefcase, Dumbbell, Mountain, CheckCircle, XCircle, ChevronDown, ChevronUp, Download, User, Calendar, MapPin } from 'lucide-react';
 
 // Lazy Load Admin Components
 const Login = React.lazy(() => import('./components/Admin/Login'));
@@ -66,6 +66,9 @@ const App: React.FC = () => {
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
 
+  // PDF Ref
+  const pdfRef = useRef<HTMLDivElement>(null);
+
   const handleAnswerChange = (sectionId: string, questionIndex: number, isChecked: boolean) => {
     setAnswers(prev => ({
       ...prev,
@@ -120,12 +123,8 @@ const App: React.FC = () => {
   };
 
   const handleDownloadPDF = async () => {
-      const element = document.getElementById('results-container');
-      if (!element) return;
-
+      if (!pdfRef.current) return;
       setGeneratingPDF(true);
-      // Add specific class to handle print styling (white background, high contrast)
-      element.classList.add('pdf-mode');
 
       try {
         // @ts-ignore - Dynamic import
@@ -133,23 +132,29 @@ const App: React.FC = () => {
         const html2pdf = html2pdfModule.default;
         
         if (html2pdf) {
+            // We use a specific separate hidden DIV for the PDF to ensure it looks clean (white background, no dark mode artifacts)
+            const element = pdfRef.current;
+            
+            // Show the hidden PDF container temporarily
+            element.style.display = 'block';
+            
             const opt = {
-              margin: [0.5, 0.5] as [number, number],
-              filename: `${userInfo.name.replace(/\s+/g, '_')}_Performance_Profile.pdf`,
+              margin: [0.3, 0.3] as [number, number],
+              filename: `${userInfo.name.replace(/\s+/g, '_')}_Conscious_Performance_Profile.pdf`,
               image: { type: 'jpeg' as const, quality: 0.98 },
               html2canvas: { 
                   scale: 2, 
                   useCORS: true,
-                  backgroundColor: '#ffffff', // Force white background
+                  backgroundColor: '#ffffff',
                   logging: false
               }, 
-              jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
+              jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' as const }
             };
             
-            // Wait a tick for CSS to apply
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
             await html2pdf().set(opt).from(element).save();
+            
+            // Hide it again
+            element.style.display = 'none';
         } else {
             alert("PDF generator failed to load.");
         }
@@ -157,8 +162,6 @@ const App: React.FC = () => {
         console.error("PDF generation error:", err);
         alert("Could not generate PDF. Please try again.");
       } finally {
-        // Remove the class to restore Dark Mode
-        element.classList.remove('pdf-mode');
         setGeneratingPDF(false);
       }
   };
@@ -362,26 +365,28 @@ const App: React.FC = () => {
                         placeholder="name@example.com"
                     />
                 </div>
-                <div>
-                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Date of Birth</label>
-                    <input 
-                        type="date" 
-                        required
-                        className="input-field text-lg"
-                        value={userInfo.dob}
-                        onChange={(e) => setUserInfo({...userInfo, dob: e.target.value})}
-                    />
-                </div>
-                <div>
-                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Occupation</label>
-                    <input 
-                        type="text" 
-                        required
-                        className="input-field text-lg"
-                        value={userInfo.occupation}
-                        onChange={(e) => setUserInfo({...userInfo, occupation: e.target.value})}
-                        placeholder="e.g. Entrepreneur, Coach..."
-                    />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Date of Birth</label>
+                      <input 
+                          type="date" 
+                          required
+                          className="input-field text-lg"
+                          value={userInfo.dob}
+                          onChange={(e) => setUserInfo({...userInfo, dob: e.target.value})}
+                      />
+                  </div>
+                  <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Occupation</label>
+                      <input 
+                          type="text" 
+                          required
+                          className="input-field text-lg"
+                          value={userInfo.occupation}
+                          onChange={(e) => setUserInfo({...userInfo, occupation: e.target.value})}
+                          placeholder="Role / Job"
+                      />
+                  </div>
                 </div>
                 <button 
                     type="submit"
@@ -396,8 +401,8 @@ const App: React.FC = () => {
   );
   
   const renderResults = () => (
-     <div id="results-container" className="max-w-7xl mx-auto pt-12 px-6 pb-20 animate-fade-in min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6 hide-on-pdf">
+     <div className="max-w-7xl mx-auto pt-12 px-6 pb-20 animate-fade-in min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div>
             <div className="flex items-center gap-2 mb-3">
                 <div className="h-1 w-10 bg-orange-500 rounded-full"></div>
@@ -414,7 +419,7 @@ const App: React.FC = () => {
                 {generatingPDF ? (
                     <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                    <div className="w-2 h-2 bg-black rounded-full"></div>
+                    <Download size={16} />
                 )}
                 {generatingPDF ? 'Generating...' : 'Download PDF'}
             </button>
@@ -440,6 +445,25 @@ const App: React.FC = () => {
              </div>
          </div>
       )}
+
+      {/* Profile Header Block */}
+      <div className="glass-panel p-6 rounded-2xl mb-8 flex flex-col md:flex-row gap-6 items-center md:items-start border border-white/5">
+         <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+            {userInfo.name.charAt(0)}
+         </div>
+         <div className="flex-1 text-center md:text-left">
+            <h3 className="text-2xl font-bold text-white">{userInfo.name}</h3>
+            <div className="flex flex-wrap gap-4 mt-2 justify-center md:justify-start text-sm text-gray-400">
+               <div className="flex items-center gap-1"><User size={14}/> {userInfo.email}</div>
+               {userInfo.occupation && <div className="flex items-center gap-1"><Briefcase size={14}/> {userInfo.occupation}</div>}
+               {userInfo.dob && <div className="flex items-center gap-1"><Calendar size={14}/> {userInfo.dob}</div>}
+            </div>
+         </div>
+         <div className="text-right hidden md:block">
+            <div className="text-xs text-gray-500 uppercase font-bold tracking-widest">Assessment Date</div>
+            <div className="text-white font-mono">{new Date().toLocaleDateString()}</div>
+         </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
         <div className="lg:col-span-7 glass-panel chart-container p-8 md:p-14 rounded-[2.5rem] flex flex-col items-center relative overflow-hidden">
@@ -516,6 +540,53 @@ const App: React.FC = () => {
                   ))}
               </div>
           )}
+      </div>
+
+      {/* HIDDEN PDF TEMPLATE - Only Visible to html2pdf generator */}
+      <div ref={pdfRef} style={{ display: 'none', background: 'white', padding: '40px', color: '#000', fontFamily: 'sans-serif' }}>
+         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '2px solid #f97316', paddingBottom: '20px' }}>
+            <div>
+                <h1 style={{ fontSize: '28px', fontWeight: '900', color: '#000', margin: 0 }}>Conscious Human Performance</h1>
+                <p style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>Official Assessment Profile</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{userInfo.name}</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>{new Date().toLocaleDateString()}</div>
+                {userInfo.occupation && <div style={{ fontSize: '12px', color: '#666' }}>{userInfo.occupation}</div>}
+            </div>
+         </div>
+
+         <div style={{ display: 'flex', gap: '30px', marginBottom: '40px' }}>
+             <div style={{ flex: 1 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', textTransform: 'uppercase', color: '#f97316', marginBottom: '15px' }}>Score Breakdown</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    {Object.entries(scores).map(([key, val]) => (
+                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: '#f3f4f6', borderRadius: '4px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{key}</span>
+                            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{typeof val === 'number' ? val.toFixed(1) : val}</span>
+                        </div>
+                    ))}
+                </div>
+             </div>
+             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', borderRadius: '12px', padding: '20px' }}>
+                  {/* Note: We don't render the complex SVG chart here to avoid canvas tainting issues in PDF. We show the key stats. */}
+                  <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '48px', fontWeight: '900', color: '#f97316' }}>
+                          {Object.values(scores).reduce((a,b) => (typeof a === 'number' && typeof b === 'number') ? a + b : 0, 0) / 9 >= 5 ? 'High' : 'Growing'}
+                      </div>
+                      <div style={{ fontSize: '12px', textTransform: 'uppercase', color: '#666', letterSpacing: '1px' }}>Performance Level</div>
+                  </div>
+             </div>
+         </div>
+
+         <div style={{ marginBottom: '30px' }}>
+             <h3 style={{ fontSize: '16px', fontWeight: 'bold', textTransform: 'uppercase', color: '#f97316', marginBottom: '15px' }}>AI Strategic Analysis</h3>
+             <GeminiInsights scores={scores} />
+         </div>
+
+         <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '10px', color: '#999' }}>
+             &copy; 2025 Conscious Human Performance. All Rights Reserved.
+         </div>
       </div>
      </div>
   );
