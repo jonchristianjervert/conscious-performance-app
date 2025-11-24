@@ -5,7 +5,7 @@ import PerformanceModelChart from './components/PerformanceModelChart';
 import GeminiInsights from './components/GeminiInsights';
 import { submitAssessment, getPreviousSubmission } from './services/mockData';
 import { sendSubmissionEmails } from './services/automation';
-import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, Star, Activity, PlayCircle, Zap, Heart, Users, Briefcase, Dumbbell, Mountain } from 'lucide-react';
+import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, Star, Activity, PlayCircle, Zap, Heart, Users, Briefcase, Dumbbell, Mountain, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 // Lazy Load Admin Components
 const Login = React.lazy(() => import('./components/Admin/Login'));
@@ -58,12 +58,13 @@ const App: React.FC = () => {
   const [view, setView] = useState<string>('welcome');
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
-  const [userInfo, setUserInfo] = useState({ name: '', email: '' });
+  const [userInfo, setUserInfo] = useState({ name: '', email: '', dob: '', occupation: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousScores, setPreviousScores] = useState<Scores | null>(null);
   const [adminTab, setAdminTab] = useState('overview');
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [showAnswers, setShowAnswers] = useState(false);
 
   const handleAnswerChange = (sectionId: string, questionIndex: number, isChecked: boolean) => {
     setAnswers(prev => ({
@@ -361,6 +362,27 @@ const App: React.FC = () => {
                         placeholder="name@example.com"
                     />
                 </div>
+                <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Date of Birth</label>
+                    <input 
+                        type="date" 
+                        required
+                        className="input-field text-lg"
+                        value={userInfo.dob}
+                        onChange={(e) => setUserInfo({...userInfo, dob: e.target.value})}
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Occupation</label>
+                    <input 
+                        type="text" 
+                        required
+                        className="input-field text-lg"
+                        value={userInfo.occupation}
+                        onChange={(e) => setUserInfo({...userInfo, occupation: e.target.value})}
+                        placeholder="e.g. Entrepreneur, Coach..."
+                    />
+                </div>
                 <button 
                     type="submit"
                     disabled={isSubmitting}
@@ -419,7 +441,7 @@ const App: React.FC = () => {
          </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
         <div className="lg:col-span-7 glass-panel chart-container p-8 md:p-14 rounded-[2.5rem] flex flex-col items-center relative overflow-hidden">
            {/* Ambient Glow */}
            <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none ambient-glow"></div>
@@ -452,6 +474,48 @@ const App: React.FC = () => {
                 </div>
            </div>
         </div>
+      </div>
+      
+      {/* Detailed Responses Section */}
+      <div className="glass-panel rounded-3xl overflow-hidden mb-8 border border-white/10">
+          <button 
+              onClick={() => setShowAnswers(!showAnswers)}
+              className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 transition-colors"
+          >
+              <div className="flex items-center gap-3">
+                  <div className="bg-orange-500/20 p-2 rounded-lg text-orange-400">
+                      <ShieldCheck size={20} />
+                  </div>
+                  <div className="text-left">
+                      <h3 className="text-white font-bold text-lg">Review Your Responses</h3>
+                      <p className="text-sm text-gray-400">See your answers for each section.</p>
+                  </div>
+              </div>
+              {showAnswers ? <ChevronUp className="text-gray-400" /> : <ChevronDown className="text-gray-400" />}
+          </button>
+          
+          {showAnswers && (
+              <div className="p-6 md:p-8 space-y-8 bg-[#0a0a0a]/50">
+                  {SECTIONS.map(section => (
+                      <div key={section.id}>
+                          <h4 className="text-orange-400 font-bold uppercase text-xs tracking-wider mb-4 border-b border-white/10 pb-2">{section.title}</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {section.questions.map((q, idx) => {
+                                  const isYes = answers[section.id][idx];
+                                  return (
+                                      <div key={idx} className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${isYes ? 'bg-green-900/10 border-green-500/20' : 'bg-gray-800/30 border-white/5'}`}>
+                                          <div className={`mt-0.5 flex-shrink-0 ${isYes ? 'text-green-400' : 'text-gray-500'}`}>
+                                              {isYes ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                                          </div>
+                                          <span className={`text-sm ${isYes ? 'text-gray-200 font-medium' : 'text-gray-500'}`}>{q.text}</span>
+                                      </div>
+                                  );
+                              })}
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          )}
       </div>
      </div>
   );
