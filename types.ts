@@ -30,6 +30,8 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  dob?: string;
+  occupation?: string;
   role: 'user' | 'admin';
   createdAt: string;
 }
