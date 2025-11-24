@@ -1,7 +1,8 @@
+
 import { DashboardMetrics, Submission, Scores, Answers, QuestionStat, UserProfile } from '../types';
 import { SECTIONS } from '../constants';
 import { db, isConfigured } from './firebase';
-import { collection, addDoc, getDocs, query, orderBy, doc, getDoc, Timestamp, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, doc, getDoc, Timestamp, where, deleteDoc } from 'firebase/firestore';
 
 // --- FALLBACK MOCK GENERATORS ---
 // These are used if Firebase is not configured or fails.
@@ -172,6 +173,22 @@ export const submitAssessment = async (
         }
     };
     MOCK_SUBMISSIONS = [newSubmission, ...MOCK_SUBMISSIONS];
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_SUBMISSIONS)); } catch (e) {}
+};
+
+export const deleteSubmission = async (id: string): Promise<void> => {
+    // 1. REAL FIREBASE DELETE
+    if (isConfigured && db && !id.startsWith('sub_mock') && !id.startsWith('sub_jon')) {
+        try {
+            await deleteDoc(doc(db, 'submissions', id));
+            return;
+        } catch (e) {
+            console.error("Firebase Delete Error:", e);
+        }
+    }
+
+    // 2. MOCK DELETE (Fallback)
+    MOCK_SUBMISSIONS = MOCK_SUBMISSIONS.filter(s => s.id !== id);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_SUBMISSIONS)); } catch (e) {}
 };
 
