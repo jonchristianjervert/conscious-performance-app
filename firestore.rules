@@ -2,11 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /submissions/{document=**} {
-      // Allow anyone to submit an assessment (Public)
-      allow create: if true;
-      
-      // Allow only logged-in Admins to view, edit, or delete records
-      allow read, update, delete: if request.auth != null;
+      // TEMP: allow full access for development / trusted admin-only usage
+      allow read, write: if true;
     }
   }
 }
