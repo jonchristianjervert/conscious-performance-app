@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { Search, Filter, ChevronRight, Download } from 'lucide-react';
-import { fetchSubmissions, downloadCSV } from '../../services/mockData';
+import { Search, Filter, ChevronRight, Download, Trash2 } from 'lucide-react';
+import { fetchSubmissions, downloadCSV, deleteSubmission } from '../../services/mockData';
 import { Submission } from '../../types';
 
 interface SubmissionListProps {
@@ -19,6 +19,15 @@ const SubmissionList: React.FC<SubmissionListProps> = ({ onSelectSubmission }) =
       setLoading(false);
     });
   }, []);
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Prevent opening the detail view
+    if (window.confirm("Are you sure you want to delete this submission? This action cannot be undone.")) {
+      await deleteSubmission(id);
+      // Remove from UI immediately
+      setSubmissions(prev => prev.filter(s => s.id !== id));
+    }
+  };
 
   const filtered = submissions.filter(s => 
     s.userProfile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,7 +82,7 @@ const SubmissionList: React.FC<SubmissionListProps> = ({ onSelectSubmission }) =
                 <th className="p-4 text-gray-400 font-medium text-sm uppercase tracking-wider text-center">Adv. Score</th>
                 <th className="p-4 text-gray-400 font-medium text-sm uppercase tracking-wider text-center">Avg Score</th>
                 <th className="p-4 text-gray-400 font-medium text-sm uppercase tracking-wider">Device</th>
-                <th className="p-4 text-gray-400 font-medium text-sm uppercase tracking-wider"></th>
+                <th className="p-4 text-gray-400 font-medium text-sm uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
@@ -105,7 +114,14 @@ const SubmissionList: React.FC<SubmissionListProps> = ({ onSelectSubmission }) =
                         <td className="p-4 text-gray-400 text-sm">
                             {sub.metadata.device}
                         </td>
-                        <td className="p-4 text-right">
+                        <td className="p-4 text-right flex items-center justify-end gap-3">
+                            <button 
+                                onClick={(e) => handleDelete(e, sub.id)}
+                                className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                title="Delete Record"
+                            >
+                                <Trash2 size={18} />
+                            </button>
                             <ChevronRight className="inline-block text-gray-600 group-hover:text-orange-500 transition-colors" />
                         </td>
                         </tr>
