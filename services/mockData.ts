@@ -1,4 +1,3 @@
-
 import { DashboardMetrics, Submission, Scores, Answers, QuestionStat, UserProfile } from '../types';
 import { SECTIONS } from '../constants';
 import { db, isConfigured } from './firebase';
@@ -111,7 +110,7 @@ initMockData();
 // --- REAL DATA SERVICE FUNCTIONS ---
 
 export const submitAssessment = async (
-  user: { name: string; email: string },
+  user: { name: string; email: string; dob: string; occupation: string },
   scores: Scores,
   answers: Answers
 ): Promise<void> => {
@@ -126,6 +125,8 @@ export const submitAssessment = async (
                     id: `user_${user.email.replace(/[^a-zA-Z0-9]/g, '')}`,
                     name: user.name,
                     email: user.email,
+                    dob: user.dob,
+                    occupation: user.occupation,
                     role: 'user',
                     createdAt: new Date().toISOString()
                 },
@@ -156,6 +157,8 @@ export const submitAssessment = async (
             id: `user_${Date.now()}`,
             name: user.name,
             email: user.email,
+            dob: user.dob,
+            occupation: user.occupation,
             role: 'user',
             createdAt: new Date().toISOString(),
         },
@@ -374,11 +377,13 @@ export const seedFirestore = async () => {
 export const downloadCSV = async () => {
     const subs = await fetchSubmissions(); // Will get Real or Mock depending on config
     
-    const headers = ['ID', 'Name', 'Email', 'Date', 'Energy', 'Awareness', 'Love', 'Tribe', 'Career', 'Abundance', 'Fitness', 'Health', 'Adventure'];
+    const headers = ['ID', 'Name', 'Email', 'DOB', 'Occupation', 'Date', 'Energy', 'Awareness', 'Love', 'Tribe', 'Career', 'Abundance', 'Fitness', 'Health', 'Adventure'];
     const rows = subs.map(s => [
         s.id,
         s.userProfile?.name || 'Unknown',
         s.userProfile?.email || 'Unknown',
+        s.userProfile?.dob || '',
+        s.userProfile?.occupation || '',
         new Date(s.timestamp).toLocaleDateString(),
         s.scores.Energy,
         s.scores.Awareness,
