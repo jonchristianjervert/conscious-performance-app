@@ -1,10 +1,12 @@
-import React, { useState, useMemo, Suspense, useRef } from 'react';
+
+import React, { useState, useMemo, Suspense, useRef, useEffect } from 'react';
 import { SECTIONS } from './constants';
-import { Answers, Scores } from './types';
+import { Answers, Scores, Section } from './types';
 import PerformanceModelChart from './components/PerformanceModelChart';
 import GeminiInsights from './components/GeminiInsights';
 import { submitAssessment, getPreviousSubmission } from './services/mockData';
 import { sendSubmissionEmails } from './services/automation';
+import { getQuestions } from './services/questionService';
 import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, Star, Activity, PlayCircle, Zap, Heart, Users, Briefcase, Dumbbell, Mountain, CheckCircle, XCircle, ChevronDown, ChevronUp, Download, User, Calendar, MapPin } from 'lucide-react';
 
 // Lazy Load Admin Components
@@ -49,15 +51,23 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
-const initialAnswers = SECTIONS.reduce((acc, section) => {
-  acc[section.id] = Array(section.questions.length).fill(false);
-  return acc;
-}, {} as Answers);
-
 const App: React.FC = () => {
   const [view, setView] = useState<string>('welcome');
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Answers>(initialAnswers);
+  
+  // State for Dynamic Questions
+  const [sections, setSections] = useState<Section[]>(SECTIONS);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
+
+  // Initialize answers with SECTIONS constant first to prevent render errors, 
+  // will update when dynamic questions load
+  const [answers, setAnswers] = useState<Answers>(() => {
+    return SECTIONS.reduce((acc, section) => {
+      acc[section.id] = Array(section.questions.length).fill(false);
+      return acc;
+    }, {} as Answers);
+  });
+
   const [userInfo, setUserInfo] = useState({ name: '', email: '', dob: '', occupation: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousScores, setPreviousScores] = useState<Scores | null>(null);
@@ -68,6 +78,35 @@ const App: React.FC = () => {
 
   // PDF Ref
   const pdfRef = useRef<HTMLDivElement>(null);
+
+  // Load Questions on Mount
+  useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        const loadedSections = await getQuestions();
+        setSections(loadedSections);
+        
+        // Reset answers structure to match loaded questions
+        setAnswers(prev => {
+          const newAnswers: Answers = {};
+          loadedSections.forEach(section => {
+             // Preserve existing answers if length matches, else reset
+             if (prev[section.id] && prev[section.id].length === section.questions.length) {
+                newAnswers[section.id] = prev[section.id];
+             } else {
+                newAnswers[section.id] = Array(section.questions.length).fill(false);
+             }
+          });
+          return newAnswers;
+        });
+      } catch (err) {
+        console.error("Failed to load questions", err);
+      } finally {
+        setLoadingQuestions(false);
+      }
+    };
+    loadQuestions();
+  }, []);
 
   const handleAnswerChange = (sectionId: string, questionIndex: number, isChecked: boolean) => {
     setAnswers(prev => ({
@@ -86,7 +125,8 @@ const App: React.FC = () => {
       let scoreI = 0;
       let scoreJ = 0;
 
-      for(const section of SECTIONS) {
+      for(const section of sections) {
+          if (!answers[section.id]) continue;
           const yesCount = answers[section.id].filter(Boolean).length;
           if(scoreMap[section.id]){
               scores[scoreMap[section.id]] = yesCount;
@@ -101,7 +141,7 @@ const App: React.FC = () => {
       return scores as Scores;
   };
 
-  const scores = useMemo(calculateScores, [answers]);
+  const scores = useMemo(calculateScores, [answers, sections]);
 
   const handleAssessmentComplete = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,8 +280,12 @@ const App: React.FC = () => {
   );
 
   const renderAssessment = () => {
-    const currentSection = SECTIONS[currentSectionIndex];
-    const progress = ((currentSectionIndex + 1) / SECTIONS.length) * 100;
+    if (loadingQuestions) return <div className="min-h-screen flex items-center justify-center text-orange-500">Loading Assessment...</div>;
+    
+    const currentSection = sections[currentSectionIndex];
+    if (!currentSection) return <div>Error loading section</div>;
+
+    const progress = ((currentSectionIndex + 1) / sections.length) * 100;
     const SectionIcon = getSectionIcon(currentSection.category);
 
     return (
@@ -261,7 +305,7 @@ const App: React.FC = () => {
                 </div>
                 <span className="text-orange-500 font-bold tracking-[0.2em] text-sm uppercase">{currentSection.category}</span>
             </div>
-            <span className="text-gray-500 text-sm font-mono">{currentSectionIndex + 1} / {SECTIONS.length}</span>
+            <span className="text-gray-500 text-sm font-mono">{currentSectionIndex + 1} / {sections.length}</span>
         </div>
 
         {/* Question Card */}
@@ -275,24 +319,24 @@ const App: React.FC = () => {
             {currentSection.questions.map((q, i) => (
               <label key={i} className={`
                 group flex items-center p-6 rounded-2xl cursor-pointer transition-all duration-300 border
-                ${answers[currentSection.id][i] 
+                ${answers[currentSection.id]?.[i] 
                     ? 'bg-gradient-to-r from-orange-900/20 to-orange-900/5 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.1)] translate-x-2' 
                     : 'bg-[#121214]/60 border-white/5 hover:bg-[#1a1c23]/80 hover:border-white/10 hover:scale-[1.01]'
                 }
               `}>
                 <div className={`
                     relative flex items-center justify-center h-7 w-7 flex-shrink-0 rounded-lg border-2 transition-all duration-300
-                    ${answers[currentSection.id][i] ? 'border-orange-500 bg-orange-500' : 'border-gray-600 bg-transparent group-hover:border-gray-400'}
+                    ${answers[currentSection.id]?.[i] ? 'border-orange-500 bg-orange-500' : 'border-gray-600 bg-transparent group-hover:border-gray-400'}
                 `}>
                     <input
                         type="checkbox"
                         className="appearance-none absolute inset-0 cursor-pointer"
-                        checked={answers[currentSection.id][i]}
+                        checked={answers[currentSection.id]?.[i] || false}
                         onChange={(e) => handleAnswerChange(currentSection.id, i, e.target.checked)}
                     />
-                    <ShieldCheck size={16} className={`text-white transform transition-transform duration-300 ${answers[currentSection.id][i] ? 'scale-100' : 'scale-0'}`} />
+                    <ShieldCheck size={16} className={`text-white transform transition-transform duration-300 ${answers[currentSection.id]?.[i] ? 'scale-100' : 'scale-0'}`} />
                 </div>
-                <span className={`ml-5 text-lg md:text-xl leading-snug transition-colors ${answers[currentSection.id][i] ? 'text-white font-medium' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                <span className={`ml-5 text-lg md:text-xl leading-snug transition-colors ${answers[currentSection.id]?.[i] ? 'text-white font-medium' : 'text-gray-400 group-hover:text-gray-200'}`}>
                     {q.text}
                 </span>
               </label>
@@ -310,7 +354,7 @@ const App: React.FC = () => {
             Previous
           </button>
 
-          {currentSectionIndex < SECTIONS.length - 1 ? (
+          {currentSectionIndex < sections.length - 1 ? (
             <button
               onClick={() => setCurrentSectionIndex(currentSectionIndex + 1)}
               className="group bg-white text-black hover:bg-gray-200 font-bold py-4 px-10 rounded-full transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-3"
@@ -520,12 +564,12 @@ const App: React.FC = () => {
           
           {showAnswers && (
               <div className="p-6 md:p-8 space-y-8 bg-[#0a0a0a]/50">
-                  {SECTIONS.map(section => (
+                  {sections.map(section => (
                       <div key={section.id}>
                           <h4 className="text-orange-400 font-bold uppercase text-xs tracking-wider mb-4 border-b border-white/10 pb-2">{section.title}</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {section.questions.map((q, idx) => {
-                                  const isYes = answers[section.id][idx];
+                                  const isYes = answers[section.id]?.[idx];
                                   return (
                                       <div key={idx} className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${isYes ? 'bg-green-900/10 border-green-500/20' : 'bg-gray-800/30 border-white/5'}`}>
                                           <div className={`mt-0.5 flex-shrink-0 ${isYes ? 'text-green-400' : 'text-gray-500'}`}>
