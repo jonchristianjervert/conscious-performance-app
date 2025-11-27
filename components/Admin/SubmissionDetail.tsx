@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, User, Calendar, Smartphone, MapPin, Clock, CheckCircle, XCircle, Briefcase } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Smartphone, MapPin, Clock, CheckCircle, XCircle, Briefcase, Sparkles } from 'lucide-react';
 import { Submission } from '../../types';
 import { fetchSubmissionById } from '../../services/mockData';
 import { generateIndividualAdminReport } from '../../services/geminiService';
@@ -107,6 +107,22 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
              <h3 className="text-lg font-bold text-white mb-6 w-full text-left">Performance Model Visualization</h3>
              <PerformanceModelChart scores={submission.scores} />
            </div>
+
+           {/* Client's AI Report (NEW) */}
+           {submission.aiSummary && (
+               <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl border border-gray-700 relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-6 opacity-5">
+                       <Sparkles size={120} />
+                   </div>
+                   <div className="flex items-center gap-2 mb-4 relative z-10">
+                       <Sparkles size={20} className="text-orange-500" />
+                       <h3 className="text-lg font-bold text-white">Client's Generated AI Report</h3>
+                   </div>
+                   <div className="bg-black/30 p-4 rounded-lg border border-white/5 text-gray-300 text-sm max-h-60 overflow-y-auto custom-scrollbar relative z-10">
+                       <div dangerouslySetInnerHTML={{ __html: submission.aiSummary }} />
+                   </div>
+               </div>
+           )}
 
            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
                 <h3 className="text-lg font-bold text-white mb-4">Raw Score Data</h3>
