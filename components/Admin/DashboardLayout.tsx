@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { LayoutDashboard, Users, Settings, LogOut, Zap, FileText, Database } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Zap, FileText, Database, ListChecks } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'pipeline', label: 'Pipeline', icon: ListChecks },
     { id: 'submissions', label: 'Submissions', icon: Users },
     { id: 'reports', label: 'Reports & Export', icon: FileText },
     { id: 'settings', label: 'Settings', icon: Settings },
