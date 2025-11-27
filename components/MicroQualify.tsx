@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Sparkles, ArrowRight, CheckCircle, Calendar, MessageSquare, Lock } from 'lucide-react';
 import { createLead, markLeadAsBooked } from '../services/clientService';
 
-// REPLACE THIS with your actual Booking URL (GHL or Google Calendar Appointment Page)
+// Your Real Google Calendar Link
 const BOOKING_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3wEmWe9fD1zfp1GR_yMqJrqmZrCO_tkm4ieXYD_Rv0HQx1P5JBscI-cQe3Mv3Ifyf3xNQuGlXR?gv=true"; 
 
 interface MicroQualifyProps {
-  onComplete: () => void; // Called if they skip or finish booking
-  onAdminLogin: () => void; // Called when clicking Coach Login
+  onComplete: () => void; 
+  onAdminLogin: () => void; // Added this prop
 }
 
 const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin }) => {
@@ -20,9 +20,9 @@ const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin })
     name: '',
     email: '',
     phone: '',
-    motivation: '', // Q1
-    struggle: '',   // Q2
-    intent: ''      // Q3
+    motivation: '', 
+    struggle: '',   
+    intent: ''      
   });
 
   const handleNext = () => {
@@ -55,9 +55,9 @@ const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin })
   const handleManualBookingConfirmation = async () => {
     if (leadId) {
         await markLeadAsBooked(leadId);
-        // Optional: Add visual feedback or auto-advance
-        alert("Booking Confirmed! We look forward to speaking with you.");
         onComplete(); // Move to assessment
+    } else {
+        onComplete();
     }
   };
 
@@ -244,28 +244,12 @@ const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin })
             </p>
 
             <div className="glass-panel p-2 rounded-2xl border border-white/10 shadow-2xl overflow-hidden bg-white h-[600px] md:h-[700px] relative">
-                {/* Placeholder for GHL / Calendar Embed */}
                 <iframe 
                     src={BOOKING_URL} 
                     width="100%" 
                     height="100%" 
                     frameBorder="0"
                 ></iframe>
-                
-                {/* Fallback if no URL is set */}
-                {(!BOOKING_URL || BOOKING_URL.includes("google.com/calendar/appointments")) && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 text-white p-8">
-                        <Calendar size={64} className="text-gray-600 mb-4" />
-                        <h3 className="text-xl font-bold mb-2">Calendar Integration Pending</h3>
-                        <p className="text-gray-400 max-w-md text-center mb-6">
-                            The booking system is currently being configured. <br/>
-                            We have received your application and will contact you at <strong>{formData.email}</strong> shortly.
-                        </p>
-                        <button onClick={onComplete} className="text-orange-500 hover:text-white underline">
-                            Return to Home
-                        </button>
-                    </div>
-                )}
             </div>
             
             <div className="mt-8 flex justify-center gap-4 items-center">
