@@ -917,7 +917,7 @@ const App: React.FC = () => {
           style={{
             marginTop: '40px',
             paddingTop: '20px',
-            borderTop: '1px solid '#eee',
+            borderTop: '1px solid #eee',
             textAlign: 'center',
             fontSize: '10px',
             color: '#999'
