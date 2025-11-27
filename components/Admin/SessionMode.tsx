@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lead, ActivationPlan } from '../../types';
-import { ArrowLeft, Save, Sparkles, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Sparkles, CheckCircle, Clock, FileText } from 'lucide-react';
 import { generateActivationPlan } from '../../services/geminiService';
-import { saveSession } from '../../services/clientService';
+import { saveSession, fetchSessionByLeadId } from '../../services/clientService';
 
 interface SessionModeProps {
   lead: Lead;
@@ -12,7 +12,7 @@ interface SessionModeProps {
 
 const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
   const [notes, setNotes] = useState({
-    challenges: lead.responses.struggle || '',
+    challenges: lead.responses?.struggle || '',
     goals: '',
     gap: '',
   });
@@ -26,6 +26,26 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [plan, setPlan] = useState<ActivationPlan | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load existing session data on mount
+  useEffect(() => {
+    const loadSession = async () => {
+        if (lead.id) {
+            const existingSession = await fetchSessionByLeadId(lead.id);
+            if (existingSession) {
+                setNotes(existingSession.notes);
+                setAgreements(existingSession.agreements);
+                if (existingSession.activationPlan) {
+                    setPlan(existingSession.activationPlan);
+                }
+                setIsSaved(true); // It was saved previously
+            }
+        }
+        setIsLoading(false);
+    };
+    loadSession();
+  }, [lead.id]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -33,6 +53,7 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
         const jsonStr = await generateActivationPlan(lead.name, notes);
         const parsedPlan = JSON.parse(jsonStr);
         setPlan(parsedPlan);
+        setIsSaved(false); // New plan generated, needs saving
     } catch (e) {
         alert("Failed to generate plan. Please try again.");
     } finally {
@@ -56,6 +77,10 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
         alert("Failed to save to database.");
     }
   };
+
+  if (isLoading) {
+      return <div className="h-full flex items-center justify-center bg-[#050505] text-gray-500">Loading Session Data...</div>;
+  }
 
   return (
     <div className="h-full flex flex-col bg-[#050505] text-white animate-fade-in relative">
@@ -88,8 +113,30 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT: Script & Prompts */}
+        {/* LEFT: Context & Script */}
         <div className="w-1/3 border-r border-white/5 p-8 overflow-y-auto custom-scrollbar bg-gray-900/30">
+            
+            {/* NEW: Lead Context Section */}
+            <div className="mb-8 p-5 bg-blue-900/10 border border-blue-500/20 rounded-xl">
+                <h3 className="text-blue-400 font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
+                    <FileText size={14} /> Lead Context
+                </h3>
+                <div className="space-y-4">
+                    <div>
+                        <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Motivation</span>
+                        <p className="text-sm text-gray-300 italic">"{lead.responses?.motivation || 'N/A'}"</p>
+                    </div>
+                    <div>
+                        <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Current Struggle</span>
+                        <p className="text-sm text-gray-300 italic">"{lead.responses?.struggle || 'N/A'}"</p>
+                    </div>
+                    <div>
+                        <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Intent</span>
+                        <p className="text-sm text-orange-400 font-bold">{lead.responses?.intent || 'Unknown'}</p>
+                    </div>
+                </div>
+            </div>
+
             <h3 className="text-orange-500 font-bold uppercase tracking-widest text-xs mb-6">Coach Script & Guide</h3>
             
             <div className="space-y-8">
@@ -110,7 +157,7 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
 
                 <div>
                     <h4 className="font-bold text-gray-200 mb-2">2. Current Reality (The Trap)</h4>
-                    <p className="text-sm text-gray-500 italic">"You mentioned {lead.responses.struggle}. Tell me more about how that impacts your daily energy?"</p>
+                    <p className="text-sm text-gray-500 italic">"You mentioned {lead.responses?.struggle}. Tell me more about how that impacts your daily energy?"</p>
                 </div>
 
                 <div>
