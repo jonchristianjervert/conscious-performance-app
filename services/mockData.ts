@@ -2,7 +2,7 @@
 import { DashboardMetrics, Submission, Scores, Answers, QuestionStat, UserProfile } from '../types';
 import { SECTIONS } from '../constants';
 import { db, isConfigured } from './firebase';
-import { collection, addDoc, getDocs, query, orderBy, doc, getDoc, Timestamp, where, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, doc, getDoc, Timestamp, where, deleteDoc, updateDoc } from 'firebase/firestore';
 
 // --- FALLBACK MOCK GENERATORS ---
 const NAMES = [
@@ -110,7 +110,7 @@ export const submitAssessment = async (
   user: { name: string; email: string; dob: string; occupation: string },
   scores: Scores,
   answers: Answers
-): Promise<void> => {
+): Promise<string> => {
     // 1. REAL FIREBASE SUBMISSION
     if (isConfigured && db) {
         try {
@@ -134,17 +134,19 @@ export const submitAssessment = async (
                     completionTimeSeconds: 0, 
                 }
             };
-            await addDoc(collection(db, 'submissions'), submissionData);
-            return;
+            const docRef = await addDoc(collection(db, 'submissions'), submissionData);
+            return docRef.id;
         } catch (e) {
             console.error("Firebase Submit Error:", e);
+            return "";
         }
     }
 
     // 2. MOCK SUBMISSION (Fallback)
     await new Promise(resolve => setTimeout(resolve, 500));
+    const newId = `sub_${Date.now()}`;
     const newSubmission: Submission = {
-        id: `sub_${Date.now()}`,
+        id: newId,
         userId: `user_${Date.now()}`,
         userProfile: {
             id: `user_${Date.now()}`,
@@ -166,11 +168,32 @@ export const submitAssessment = async (
     };
     MOCK_SUBMISSIONS = [newSubmission, ...MOCK_SUBMISSIONS];
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_SUBMISSIONS)); } catch (e) {}
+    return newId;
 };
+
+export const updateSubmission = async (id: string, data: Partial<Submission>): Promise<void> => {
+    // 1. REAL FIREBASE UPDATE
+    if (isConfigured && db && !id.startsWith('sub_')) {
+        try {
+            const docRef = doc(db, 'submissions', id);
+            await updateDoc(docRef, data);
+            return;
+        } catch (e) {
+            console.error("Firebase Update Error:", e);
+        }
+    }
+    
+    // 2. MOCK UPDATE
+    const idx = MOCK_SUBMISSIONS.findIndex(s => s.id === id);
+    if (idx > -1) {
+        MOCK_SUBMISSIONS[idx] = { ...MOCK_SUBMISSIONS[idx], ...data };
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_SUBMISSIONS)); } catch (e) {}
+    }
+}
 
 export const deleteSubmission = async (id: string): Promise<void> => {
     // 1. REAL FIREBASE DELETE
-    if (isConfigured && db && !id.startsWith('sub_mock') && !id.startsWith('sub_jon')) {
+    if (isConfigured && db) {
         try {
             await deleteDoc(doc(db, 'submissions', id));
             return;
@@ -213,7 +236,6 @@ export const fetchSubmissions = async (): Promise<Submission[]> => {
         try {
             const q = query(collection(db, 'submissions'), orderBy('timestamp', 'desc'));
             const querySnapshot = await getDocs(q);
-            // If we have real connection, return only real data. Do NOT merge with mocks.
             return querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -223,13 +245,13 @@ export const fetchSubmissions = async (): Promise<Submission[]> => {
         }
     }
 
-    // 2. MOCK FETCH (Only if Firebase failed or not configured)
+    // 2. MOCK FETCH
     await new Promise(resolve => setTimeout(resolve, 400));
     return MOCK_SUBMISSIONS;
 };
 
 export const fetchSubmissionById = async (id: string): Promise<Submission | undefined> => {
-    if (isConfigured && db && !id.startsWith('sub_mock') && !id.startsWith('sub_jon')) {
+    if (isConfigured && db && !id.startsWith('sub_')) {
         try {
             const docRef = doc(db, 'submissions', id);
             const docSnap = await getDoc(docRef);
