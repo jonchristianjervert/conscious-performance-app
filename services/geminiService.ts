@@ -140,3 +140,47 @@ export const generateWeeklyReportSummary = async (range: string, metrics: Dashbo
         return "Failed to generate report summary.";
     }
 };
+
+// --- NEW PHASE 3: SESSION PLAN GENERATOR ---
+
+export const generateActivationPlan = async (name: string, notes: { challenges: string, goals: string, gap: string }): Promise<string> => {
+    const ai = getAIClient();
+    if (!ai) return "API key missing.";
+
+    const prompt = `
+    You are a high-performance coach using the Zerkers Model. You just finished a strategy session with a client named ${name}.
+    
+    Client Context:
+    - Current Struggle: ${notes.challenges}
+    - Desired Goal: ${notes.goals}
+    - The Gap: ${notes.gap}
+
+    Create a "4-Day Activation Plan" to bridge this gap immediately.
+    The goal is NOT to solve everything, but to create momentum.
+
+    Structure the response in JSON format exactly like this:
+    {
+        "dailyFocus": [
+            "Day 1: [Specific Action]",
+            "Day 2: [Specific Action]",
+            "Day 3: [Specific Action]",
+            "Day 4: [Specific Action]"
+        ],
+        "coreInsight": "One powerful sentence summarizing their bottleneck.",
+        "mantra": "A short 5-word affirmation for them."
+    }
+    
+    Do not add markdown formatting like \`\`\`json. Just return the raw JSON object.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt
+        });
+        return response.text;
+    } catch (error) {
+        console.error("AI Plan Gen Error", error);
+        return "{}";
+    }
+};
