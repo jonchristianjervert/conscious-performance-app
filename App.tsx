@@ -14,6 +14,7 @@ import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, Star, Activity, PlayCi
 const Login = React.lazy(() => import('./components/Admin/Login'));
 const DashboardLayout = React.lazy(() => import('./components/Admin/DashboardLayout'));
 const Overview = React.lazy(() => import('./components/Admin/Overview'));
+const Pipeline = React.lazy(() => import('./components/Admin/Pipeline')); // Pipeline added
 const SubmissionList = React.lazy(() => import('./components/Admin/SubmissionList'));
 const SubmissionDetail = React.lazy(() => import('./components/Admin/SubmissionDetail'));
 const Reports = React.lazy(() => import('./components/Admin/Reports'));
@@ -239,6 +240,7 @@ const App: React.FC = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-24">
+            {/* UPDATED: Main CTA now goes to MicroQualify */}
             <button 
                 onClick={() => setView('micro-qualify')}
                 className="group relative px-12 py-6 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(249,115,22,0.4)] flex items-center gap-4 overflow-hidden ring-2 ring-orange-500/50 ring-offset-4 ring-offset-black"
@@ -651,6 +653,7 @@ const App: React.FC = () => {
             ) : (
               <>
                 {adminTab === 'overview' && <Overview />}
+                {adminTab === 'pipeline' && <Pipeline />} {/* NEW: Pipeline View */}
                 {adminTab === 'submissions' && <SubmissionList onSelectSubmission={setSelectedSubmissionId} />}
                 {adminTab === 'reports' && <Reports />}
                 {adminTab === 'settings' && <Settings />}
