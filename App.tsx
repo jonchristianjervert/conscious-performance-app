@@ -20,7 +20,7 @@ const SubmissionList = React.lazy(() => import('./components/Admin/SubmissionLis
 const SubmissionDetail = React.lazy(() => import('./components/Admin/SubmissionDetail'));
 const Reports = React.lazy(() => import('./components/Admin/Reports'));
 const Settings = React.lazy(() => import('./components/Admin/Settings'));
-const SessionMode = React.lazy(() => import('./components/Admin/SessionMode')); // NEW PHASE 3
+const SessionMode = React.lazy(() => import('./components/Admin/SessionMode')); 
 
 // Error Boundary for Admin Components
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
@@ -78,15 +78,14 @@ const App: React.FC = () => {
   // Admin State
   const [adminTab, setAdminTab] = useState('overview');
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
-  const [activeSessionLeadId, setActiveSessionLeadId] = useState<string | null>(null); // Track active session
-  const [leadsCache, setLeadsCache] = useState<Lead[]>([]); // Small cache to find lead data
+  const [activeSessionLeadId, setActiveSessionLeadId] = useState<string | null>(null); 
+  const [leadsCache, setLeadsCache] = useState<Lead[]>([]); 
 
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
 
   const pdfRef = useRef<HTMLDivElement>(null);
 
-  // Load Questions on Mount
   useEffect(() => {
     const loadQuestions = async () => {
       try {
@@ -112,7 +111,6 @@ const App: React.FC = () => {
     loadQuestions();
   }, []);
 
-  // Pre-fetch leads when admin dashboard loads so we have data for sessions
   useEffect(() => {
     if (view === 'admin-dashboard') {
         fetchLeads().then(setLeadsCache);
@@ -185,7 +183,7 @@ const App: React.FC = () => {
         const previousDisplay = element.style.display;
         element.style.display = "block";
         const opt = {
-          margin: 0.3,
+          margin: [0.3, 0.3] as [number, number],
           filename: `${(userInfo.name || "Conscious_Performance_Profile").replace(/\s+/g, "_")}.pdf`,
           image: { type: "jpeg" as const, quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false },
@@ -210,11 +208,7 @@ const App: React.FC = () => {
     return Mountain;
   };
   
-  // ... (renderWelcome, renderAssessment, renderLeadCapture, renderResults omitted for brevity as they are unchanged)
-  // Assume they exist exactly as in previous versions. 
-  // I am including only the updated Admin Dashboard logic below.
-
-  // --- ADMIN DASHBOARD RENDER LOGIC ---
+  // --- RENDER LOGIC FOR ADMIN DASHBOARD ---
   if (view === 'admin-dashboard') {
     return (
       <ErrorBoundary>
@@ -224,12 +218,11 @@ const App: React.FC = () => {
             onTabChange={(tab) => {
               setAdminTab(tab);
               setSelectedSubmissionId(null);
-              setActiveSessionLeadId(null); // Reset session view when tab changes
+              setActiveSessionLeadId(null); 
             }}
             onLogout={() => setView('welcome')}
           >
             {activeSessionLeadId ? (
-                // --- PHASE 3: LIVE SESSION MODE ---
                 <SessionMode 
                     lead={leadsCache.find(l => l.id === activeSessionLeadId) || { id: 'err', name: 'Unknown', email:'', responses: {motivation:'', struggle:'', intent:''}, status:'booked', createdAt:'' }} 
                     onBack={() => setActiveSessionLeadId(null)}
@@ -242,7 +235,7 @@ const App: React.FC = () => {
             ) : (
               <>
                 {adminTab === 'overview' && <Overview />}
-                {adminTab === 'pipeline' && <Pipeline onStartSession={setActiveSessionLeadId} />} {/* Passed prop to start session */}
+                {adminTab === 'pipeline' && <Pipeline onStartSession={setActiveSessionLeadId} />} 
                 {adminTab === 'submissions' && <SubmissionList onSelectSubmission={setSelectedSubmissionId} />}
                 {adminTab === 'reports' && <Reports />}
                 {adminTab === 'settings' && <Settings />}
@@ -254,8 +247,6 @@ const App: React.FC = () => {
     );
   }
 
-  // --- MAIN RENDER SWITCH ---
-  // Re-including the other render functions briefly to ensure file integrity when pasting
   const renderWelcome = () => (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
@@ -490,7 +481,7 @@ const App: React.FC = () => {
     <div className="min-h-screen selection:bg-orange-500/30 text-gray-100">
       <main>
         {view === 'welcome' && renderWelcome()}
-        {view === 'micro-qualify' && <MicroQualify onComplete={() => setView('assessment')} />} 
+        {view === 'micro-qualify' && <MicroQualify onComplete={() => setView('assessment')} onAdminLogin={() => setView('admin-login')} />} 
         {view === 'assessment' && renderAssessment()}
         {view === 'lead-capture' && renderLeadCapture()}
         {view === 'results' && renderResults()}
