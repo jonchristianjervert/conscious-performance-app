@@ -67,6 +67,33 @@ export interface Lead {
   createdAt: string;
 }
 
+// --- SESSION & PLAN TYPES (Phase 3) ---
+
+export interface ActivationPlan {
+  dailyFocus: string[]; // 4 days of specific actions
+  coreInsight: string;
+  mantra: string;
+}
+
+export interface Session {
+  id: string;
+  leadId: string;
+  coachId: string; // "admin" for now
+  date: string;
+  notes: {
+    challenges: string;
+    goals: string;
+    gap: string; // The gap between current and desired
+  };
+  agreements: {
+    permissionToCoach: boolean;
+    commitmentToChange: boolean;
+    financialReady: boolean;
+  };
+  activationPlan?: ActivationPlan;
+  status: 'completed' | 'in-progress';
+}
+
 export interface QuestionStat {
   questionText: string;
   percentageTrue: number;
