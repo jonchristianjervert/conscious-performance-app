@@ -1,18 +1,17 @@
 
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, CheckCircle, Calendar, MessageSquare } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle, Calendar, MessageSquare, Lock } from 'lucide-react';
 import { createLead, markLeadAsBooked } from '../services/clientService';
 
 // REPLACE THIS with your actual Booking URL (GHL or Google Calendar Appointment Page)
-// Example: "https://calendar.google.com/calendar/u/0/appointments/..."
-// or "https://api.leadconnectorhq.com/..."
 const BOOKING_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ2..."; 
 
 interface MicroQualifyProps {
   onComplete: () => void; // Called if they skip or finish booking
+  onAdminLogin: () => void; // Called when clicking Coach Login
 }
 
-const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete }) => {
+const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [leadId, setLeadId] = useState<string | null>(null);
@@ -63,6 +62,16 @@ const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete }) => {
   if (step === 1) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+        {/* COACH LOGIN BUTTON (Top Right) */}
+        <div className="absolute top-6 right-6 z-50">
+            <button 
+                onClick={onAdminLogin}
+                className="flex items-center gap-2 text-gray-500 hover:text-white text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-transparent hover:border-white/10 hover:bg-white/5 transition-all"
+            >
+                <Lock size={12} /> Coach Login
+            </button>
+        </div>
+
         {/* Background FX */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
 
