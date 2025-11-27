@@ -2,29 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // --- LEADS COLLECTION (For Pipeline) ---
+    // --- LEADS (Phase 1: Pipeline) ---
     match /leads/{leadId} {
-      // Public can create (submit form)
       allow create: if true;
-      // Only authenticated Admins can read or update
       allow read, update: if request.auth != null;
     }
 
-    // --- SUBMISSIONS COLLECTION (For Assessments) ---
+    // --- SESSIONS (Phase 3: Coach Mode) ---
+    match /sessions/{sessionId} {
+      // Only authenticated admins/coaches can create and read sessions
+      allow read, write: if request.auth != null;
+    }
+
+    // --- SUBMISSIONS (Phase 2: Assessments) ---
     match /submissions/{submissionId} {
-      // Public can create (submit assessment)
       allow create: if true;
-      // Only authenticated Admins can read, update, delete
       allow read, update, delete: if request.auth != null;
     }
 
-    // --- CONFIG COLLECTION (For Questions) ---
+    // --- CONFIG (Questions) ---
     match /app_config/{docId} {
-      // Public can read (to see questions)
       allow read: if true;
-      // Only Admins can write (edit settings)
       allow write: if request.auth != null;
     }
   }
 }
-
