@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, User, Calendar, Smartphone, MapPin, Clock, CheckCircle, XCircle, Briefcase } from 'lucide-react';
 import { Submission } from '../../types';
