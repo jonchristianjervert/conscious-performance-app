@@ -74,6 +74,7 @@ const App: React.FC = () => {
   const [userInfo, setUserInfo] = useState({ name: '', email: '', dob: '', occupation: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousScores, setPreviousScores] = useState<Scores | null>(null);
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(null); // New State
   
   // Admin State
   const [adminTab, setAdminTab] = useState('overview');
@@ -157,7 +158,10 @@ const App: React.FC = () => {
         if (prevSubmission) {
             setPreviousScores(prevSubmission.scores);
         }
-        await submitAssessment(userInfo, scores, answers);
+        // Capture the new ID
+        const newId = await submitAssessment(userInfo, scores, answers);
+        setCurrentSubmissionId(newId);
+        
         await sendSubmissionEmails(userInfo, scores);
         setView('results');
     } catch (error) {
@@ -176,10 +180,12 @@ const App: React.FC = () => {
       }
       setGeneratingPDF(true);
       try {
+        // Dynamic import to fix Vercel crash
         // @ts-ignore
         const html2pdfModule = await import('html2pdf.js');
         const html2pdfFn = html2pdfModule.default || html2pdfModule;
         if (!html2pdfFn) throw new Error("html2pdf.js failed to load.");
+        
         const previousDisplay = element.style.display;
         element.style.display = "block";
         const opt = {
@@ -397,7 +403,9 @@ const App: React.FC = () => {
            <div className="relative z-10 w-full flex justify-center"><PerformanceModelChart scores={scores} previousScores={previousScores} /></div>
         </div>
         <div className="lg:col-span-5 space-y-6">
-           <GeminiInsights scores={scores} />
+           {/* UPDATED: Pass ID to allow saving */}
+           <GeminiInsights scores={scores} submissionId={currentSubmissionId || undefined} />
+           
            <div className="glass-panel score-card p-8 rounded-3xl">
                 <h4 className="text-gray-400 uppercase tracking-wider text-xs font-bold mb-6">Raw Score Breakdown</h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -480,8 +488,19 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen selection:bg-orange-500/30 text-gray-100">
       <main>
-        {view === 'welcome' && renderWelcome()}
-        {view === 'micro-qualify' && <MicroQualify onComplete={() => setView('assessment')} onAdminLogin={() => setView('admin-login')} />} 
+        {view === 'welcome' && (
+            <div className="relative">
+                {renderWelcome()}
+                <div className="absolute top-4 left-0 w-full text-center z-50">
+                    <div className="inline-block px-4 py-2 bg-black/50 backdrop-blur-md rounded-full border border-white/10 text-xs text-gray-400">
+                        Please wait for your coach before starting the assessment.
+                    </div>
+                </div>
+            </div>
+        )}
+        
+        {view === 'micro-qualify' && <MicroQualify onComplete={() => setView('welcome')} onAdminLogin={() => setView('admin-login')} />} 
+        
         {view === 'assessment' && renderAssessment()}
         {view === 'lead-capture' && renderLeadCapture()}
         {view === 'results' && renderResults()}
