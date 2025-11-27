@@ -2,9 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { fetchLeads, updateLeadStatus } from '../../services/clientService';
 import { Lead } from '../../types';
-import { MoreHorizontal, Phone, CheckCircle, XCircle, Calendar } from 'lucide-react';
+import { MoreHorizontal, Phone, CheckCircle, XCircle, Calendar, Play } from 'lucide-react';
 
-const Pipeline: React.FC = () => {
+interface PipelineProps {
+  onStartSession?: (leadId: string) => void;
+}
+
+const Pipeline: React.FC<PipelineProps> = ({ onStartSession }) => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +24,6 @@ const Pipeline: React.FC = () => {
   };
 
   const handleStatusChange = async (id: string, newStatus: Lead['status']) => {
-    // Optimistic update
     setLeads(prev => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
     await updateLeadStatus(id, newStatus);
   };
@@ -56,7 +59,18 @@ const Pipeline: React.FC = () => {
                 <div className="text-center text-gray-600 text-sm py-8 border-2 border-dashed border-gray-800 rounded-lg">No leads</div>
               ) : (
                 leads.filter(l => (l.status || 'new') === col.id).map(lead => (
-                  <div key={lead.id} className="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-lg group hover:border-gray-500 transition-colors">
+                  <div key={lead.id} className="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-lg group hover:border-gray-500 transition-colors relative">
+                    {/* START SESSION BUTTON (Only for Booked) */}
+                    {col.id === 'booked' && onStartSession && (
+                        <button 
+                            onClick={() => onStartSession(lead.id)}
+                            className="absolute -right-2 -top-2 bg-orange-600 hover:bg-orange-500 text-white p-2 rounded-full shadow-lg transform scale-0 group-hover:scale-100 transition-all duration-300 z-10"
+                            title="Start Session"
+                        >
+                            <Play size={16} fill="white" />
+                        </button>
+                    )}
+
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-bold text-white">{lead.name}</h4>
                       <span className="text-[10px] text-gray-500">{new Date(lead.createdAt).toLocaleDateString()}</span>
