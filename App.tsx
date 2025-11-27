@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, Suspense, useRef, useEffect } from 'react';
 import { SECTIONS } from './constants';
 import { Answers, Scores, Section, Lead } from './types';
