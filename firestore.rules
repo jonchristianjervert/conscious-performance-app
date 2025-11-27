@@ -1,9 +1,30 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /submissions/{document=**} {
-      // TEMP: allow full access for development / trusted admin-only usage
-      allow read, write: if true;
+    
+    // --- LEADS COLLECTION (For Pipeline) ---
+    match /leads/{leadId} {
+      // Public can create (submit form)
+      allow create: if true;
+      // Only authenticated Admins can read or update
+      allow read, update: if request.auth != null;
+    }
+
+    // --- SUBMISSIONS COLLECTION (For Assessments) ---
+    match /submissions/{submissionId} {
+      // Public can create (submit assessment)
+      allow create: if true;
+      // Only authenticated Admins can read, update, delete
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // --- CONFIG COLLECTION (For Questions) ---
+    match /app_config/{docId} {
+      // Public can read (to see questions)
+      allow read: if true;
+      // Only Admins can write (edit settings)
+      allow write: if request.auth != null;
     }
   }
 }
+
