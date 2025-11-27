@@ -51,6 +51,22 @@ export interface Submission {
   aiSummary?: string; // Stored summary
 }
 
+// --- NEW LEAD & CLIENT TYPES (Phase 1) ---
+
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  responses: {
+    motivation: string; // Q1: What made you want to explore this?
+    struggle: string;   // Q2: What feels off?
+    intent: string;     // Q3: Clarity, Support, Both?
+  };
+  status: 'new' | 'qualified' | 'booked' | 'disqualified';
+  createdAt: string;
+}
+
 export interface QuestionStat {
   questionText: string;
   percentageTrue: number;
