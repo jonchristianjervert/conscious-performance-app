@@ -1,12 +1,15 @@
+
 import React, { useState } from 'react';
 import { Scores } from '../types';
 import { getInsightsFromGemini } from '../services/geminiService';
+import { updateSubmission } from '../services/mockData';
 
 interface GeminiInsightsProps {
   scores: Scores;
+  submissionId?: string; // New Prop to link insights to a record
 }
 
-const GeminiInsights: React.FC<GeminiInsightsProps> = ({ scores }) => {
+const GeminiInsights: React.FC<GeminiInsightsProps> = ({ scores, submissionId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [insights, setInsights] = useState('');
   const [error, setError] = useState('');
@@ -22,6 +25,13 @@ const GeminiInsights: React.FC<GeminiInsightsProps> = ({ scores }) => {
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\n/g, '<br />');
       setInsights(formattedResult);
+
+      // Save to Database if we have an ID
+      if (submissionId) {
+          await updateSubmission(submissionId, { aiSummary: result });
+          console.log("AI Insights saved to submission record.");
+      }
+
     } catch (err) {
       setError('Failed to fetch insights. Please try again.');
       console.error(err);
