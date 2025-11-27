@@ -1,13 +1,14 @@
+
 import { db, isConfigured } from './firebase';
 import { collection, addDoc, updateDoc, doc, getDocs, query, orderBy } from 'firebase/firestore';
-import { Lead } from '../types';
+import { Lead, Session } from '../types';
 
 const LEADS_COLLECTION = 'leads';
+const SESSIONS_COLLECTION = 'sessions';
 
-// Create a new Lead (Public)
+// This function saves the initial lead data from the Micro-Qualify form.
 export const createLead = async (data: Omit<Lead, 'id' | 'createdAt' | 'status'>): Promise<string> => {
   const timestamp = new Date().toISOString();
-  // Basic qualification logic (can be expanded)
   const isQualified = true; 
 
   const leadData: Omit<Lead, 'id'> = {
@@ -25,14 +26,13 @@ export const createLead = async (data: Omit<Lead, 'id' | 'createdAt' | 'status'>
       throw e;
     }
   } else {
-    console.log("Mock Lead Created (No DB Connection):", leadData);
+    console.log("Mock Lead Created:", leadData);
     return `mock_lead_${Date.now()}`;
   }
 };
 
-// Fetch all Leads (Admin Only)
 export const fetchLeads = async (): Promise<Lead[]> => {
-  if (!isConfigured || !db) return []; // Return empty if no DB
+  if (!isConfigured || !db) return []; 
 
   try {
     const q = query(collection(db, LEADS_COLLECTION), orderBy('createdAt', 'desc'));
@@ -44,7 +44,6 @@ export const fetchLeads = async (): Promise<Lead[]> => {
   }
 };
 
-// Update Lead Status (Admin Only)
 export const updateLeadStatus = async (leadId: string, status: Lead['status']) => {
   if (isConfigured && db) {
     try {
@@ -56,9 +55,30 @@ export const updateLeadStatus = async (leadId: string, status: Lead['status']) =
   }
 };
 
-// Mark as Booked (Public - triggered by calendar embed)
 export const markLeadAsBooked = async (leadId: string) => {
   if (isConfigured && db && !leadId.startsWith('mock_')) {
-    await updateLeadStatus(leadId, 'booked');
+    try {
+      const docRef = doc(db, LEADS_COLLECTION, leadId);
+      await updateDoc(docRef, { status: 'booked' });
+    } catch (e) {
+      console.error("Error updating lead status:", e);
+    }
   }
+};
+
+// --- PHASE 3: SESSIONS ---
+
+export const saveSession = async (sessionData: Omit<Session, 'id'>): Promise<string> => {
+    if (isConfigured && db) {
+        try {
+            const docRef = await addDoc(collection(db, SESSIONS_COLLECTION), sessionData);
+            return docRef.id;
+        } catch (e) {
+            console.error("Error saving session:", e);
+            throw e;
+        }
+    } else {
+        console.log("Mock Session Saved:", sessionData);
+        return "mock_session_id";
+    }
 };
