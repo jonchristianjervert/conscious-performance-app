@@ -1,6 +1,6 @@
 
 import { db, isConfigured } from './firebase';
-import { collection, addDoc, updateDoc, doc, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDocs, query, orderBy, where, limit } from 'firebase/firestore';
 import { Lead, Session } from '../types';
 
 const LEADS_COLLECTION = 'leads';
@@ -71,6 +71,12 @@ export const markLeadAsBooked = async (leadId: string) => {
 export const saveSession = async (sessionData: Omit<Session, 'id'>): Promise<string> => {
     if (isConfigured && db) {
         try {
+            // Check if session exists for this lead to update instead of create?
+            // For now, we just create a new snapshot or overwrite if we implemented ID tracking.
+            // A simple approach is to always add a new doc for history, or update if we passed an ID.
+            
+            // NOTE: In a full app, you might want to update existing. 
+            // For MVP, adding is safer (history), but fetching the LATEST is key.
             const docRef = await addDoc(collection(db, SESSIONS_COLLECTION), sessionData);
             return docRef.id;
         } catch (e) {
@@ -80,5 +86,27 @@ export const saveSession = async (sessionData: Omit<Session, 'id'>): Promise<str
     } else {
         console.log("Mock Session Saved:", sessionData);
         return "mock_session_id";
+    }
+};
+
+export const fetchSessionByLeadId = async (leadId: string): Promise<Session | null> => {
+    if (!isConfigured || !db) return null;
+
+    try {
+        const q = query(
+            collection(db, SESSIONS_COLLECTION),
+            where('leadId', '==', leadId),
+            orderBy('date', 'desc'),
+            limit(1)
+        );
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            return { id: doc.id, ...doc.data() } as Session;
+        }
+        return null;
+    } catch (e) {
+        console.error("Error fetching session:", e);
+        return null;
     }
 };
