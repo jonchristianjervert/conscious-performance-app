@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Sparkles, ArrowRight, CheckCircle, Calendar, MessageSquare, Lock } from 'lucide-react';
 import { createLead, markLeadAsBooked } from '../services/clientService';
 
 // REPLACE THIS with your actual Booking URL (GHL or Google Calendar Appointment Page)
-const BOOKING_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ2..."; 
+const BOOKING_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3wEmWe9fD1zfp1GR_yMqJrqmZrCO_tkm4ieXYD_Rv0HQx1P5JBscI-cQe3Mv3Ifyf3xNQuGlXR?gv=true"; 
 
 interface MicroQualifyProps {
   onComplete: () => void; // Called if they skip or finish booking
@@ -53,8 +52,13 @@ const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin })
     }
   };
 
-  const handleBookingClicked = () => {
-    if (leadId) markLeadAsBooked(leadId);
+  const handleManualBookingConfirmation = async () => {
+    if (leadId) {
+        await markLeadAsBooked(leadId);
+        // Optional: Add visual feedback or auto-advance
+        alert("Booking Confirmed! We look forward to speaking with you.");
+        onComplete(); // Move to assessment
+    }
   };
 
   // --- RENDER STEPS ---
@@ -241,13 +245,11 @@ const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin })
 
             <div className="glass-panel p-2 rounded-2xl border border-white/10 shadow-2xl overflow-hidden bg-white h-[600px] md:h-[700px] relative">
                 {/* Placeholder for GHL / Calendar Embed */}
-                {/* Replace src with your actual booking URL */}
                 <iframe 
                     src={BOOKING_URL} 
                     width="100%" 
                     height="100%" 
                     frameBorder="0"
-                    onLoad={handleBookingClicked}
                 ></iframe>
                 
                 {/* Fallback if no URL is set */}
@@ -266,9 +268,17 @@ const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin })
                 )}
             </div>
             
-            <p className="mt-8 text-gray-500 text-sm">
-                Can't find a time? <button onClick={onComplete} className="text-gray-400 underline hover:text-white">Skip for now</button>
-            </p>
+            <div className="mt-8 flex justify-center gap-4 items-center">
+                <button 
+                    onClick={handleManualBookingConfirmation}
+                    className="bg-green-600 hover:bg-green-500 text-white font-bold px-8 py-3 rounded-full shadow-lg shadow-green-900/20 transition-all hover:scale-105 flex items-center gap-2"
+                >
+                    <CheckCircle size={18} /> I have booked my time
+                </button>
+                <button onClick={onComplete} className="text-gray-500 hover:text-white text-sm underline">
+                    Skip for now
+                </button>
+            </div>
         </div>
     </div>
   );
