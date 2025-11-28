@@ -7,8 +7,8 @@ import { createLead, markLeadAsBooked } from '../services/clientService';
 const BOOKING_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3wEmWe9fD1zfp1GR_yMqJrqmZrCO_tkm4ieXYD_Rv0HQx1P5JBscI-cQe3Mv3Ifyf3xNQuGlXR?gv=true"; 
 
 interface MicroQualifyProps {
-  onComplete: () => void; // Called if they skip or finish booking
-  onAdminLogin: () => void; // Called when clicking Coach Login
+  onComplete: () => void; 
+  onAdminLogin: () => void; 
 }
 
 const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin }) => {
@@ -21,9 +21,9 @@ const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin })
     name: '',
     email: '',
     phone: '',
-    motivation: '', // Q1
-    struggle: '',   // Q2
-    intent: ''      // Q3
+    motivation: '', 
+    struggle: '',   
+    intent: ''      
   });
 
   const handleNext = () => {
@@ -53,14 +53,12 @@ const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin })
     }
   };
 
-  const handleBookingClicked = () => {
-    if (leadId) markLeadAsBooked(leadId);
-  };
-
   const handleManualBookingConfirmation = async () => {
     if (leadId) {
         await markLeadAsBooked(leadId);
-        onComplete(); // Move to assessment
+        // Optional: Add visual feedback or auto-advance
+        alert("Booking Confirmed! We look forward to speaking with you.");
+        onComplete(); // Move to assessment or welcome
     } else {
         onComplete();
     }
@@ -256,7 +254,7 @@ const MicroQualify: React.FC<MicroQualifyProps> = ({ onComplete, onAdminLogin })
                     width="100%" 
                     height="100%" 
                     frameBorder="0"
-                    onLoad={handleBookingClicked}
+                    // REMOVED onLoad here to prevent premature status change
                 ></iframe>
                 
                 {/* Fallback if no URL is set */}
