@@ -79,32 +79,35 @@ export const saveSession = async (sessionData: Omit<Session, 'id'>): Promise<str
     }
 };
 
-// UPDATED FUNCTION: Removes orderBy to fix Index Requirement
 export const fetchSessionByLeadId = async (leadId: string): Promise<Session | null> => {
-  if (!isConfigured || !db) return null;
+    if (!isConfigured || !db) return null;
 
-  try {
-    // We query ONLY by leadId to avoid complex Composite Index requirements.
-    // If multiple sessions exist, this gets one of them.
-    const q = query(
-      collection(db, SESSIONS_COLLECTION),
-      where("leadId", "==", leadId),
-      limit(1)
-    );
+    try {
+        console.log("Fetching session for Lead ID:", leadId);
+        
+        // SIMPLE QUERY: No orderBy, No limit. Just get matches.
+        // This avoids "Missing Index" errors.
+        const q = query(
+            collection(db, SESSIONS_COLLECTION),
+            where('leadId', '==', leadId)
+        );
+        
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+            console.log("No previous sessions found.");
+            return null;
+        }
 
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) {
-      console.log(`[sessions] No session found for leadId=${leadId}`);
-      return null;
+        // Sort in Javascript (Client-side) to find the most recent
+        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Session));
+        docs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        console.log("Session Loaded:", docs[0]);
+        return docs[0];
+
+    } catch (e) {
+        console.error("Error fetching session:", e);
+        return null;
     }
-
-    const sessionDoc = snapshot.docs[0];
-    const data = sessionDoc.data();
-
-    console.log("[sessions] Session loaded:", data);
-
-    return { id: sessionDoc.id, ...data } as Session;
-  } catch (e) {
-    console.error("Error fetching session by leadId:", e);
-    return null;
-  }
+};
