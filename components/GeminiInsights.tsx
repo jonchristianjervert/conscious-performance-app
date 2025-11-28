@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Scores } from '../types';
 import { getInsightsFromGemini } from '../services/geminiService';
@@ -6,7 +5,7 @@ import { updateSubmission } from '../services/mockData';
 
 interface GeminiInsightsProps {
   scores: Scores;
-  submissionId?: string; // New Prop to link insights to a record
+  submissionId?: string; // Prop to link insights to a record
 }
 
 const GeminiInsights: React.FC<GeminiInsightsProps> = ({ scores, submissionId }) => {
@@ -28,7 +27,7 @@ const GeminiInsights: React.FC<GeminiInsightsProps> = ({ scores, submissionId })
 
       // Save to Database if we have an ID
       if (submissionId) {
-          await updateSubmission(submissionId, { aiSummary: result });
+          await updateSubmission(submissionId, { aiSummary: formattedResult }); // Save formatted HTML or raw text
           console.log("AI Insights saved to submission record.");
       }
 
