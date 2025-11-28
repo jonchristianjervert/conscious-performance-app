@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, User, Calendar, Smartphone, MapPin, Clock, CheckCircle, XCircle, Briefcase, Sparkles } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Smartphone, MapPin, Briefcase, Sparkles } from 'lucide-react';
 import { Submission } from '../../types';
 import { fetchSubmissionById } from '../../services/mockData';
 import { generateIndividualAdminReport } from '../../services/geminiService';
@@ -150,7 +149,8 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
                       <h4 className="text-orange-400 font-bold uppercase text-xs tracking-wider mb-3">{section.title} ({section.category})</h4>
                       <div className="space-y-2">
                           {section.questions.map((q, idx) => {
-                              const isYes = submission.answers[section.id] && submission.answers[section.id][idx];
+                              // Safety check for answers array
+                              const isYes = submission.answers && submission.answers[section.id] && submission.answers[section.id][idx];
                               return (
                                   <div key={idx} className="flex items-start gap-3 p-2 hover:bg-gray-700/30 rounded">
                                       <div className={`mt-1 flex-shrink-0 ${isYes ? 'text-green-500' : 'text-gray-600'}`}>
