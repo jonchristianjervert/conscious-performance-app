@@ -21,32 +21,20 @@ const Reports = React.lazy(() => import('./components/Admin/Reports'));
 const Settings = React.lazy(() => import('./components/Admin/Settings'));
 const SessionMode = React.lazy(() => import('./components/Admin/SessionMode')); 
 
-// Error Boundary for Admin Components
+// Error Boundary
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
     super(props);
     this.state = { hasError: false, error: null };
   }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Admin Dashboard Error:", error, errorInfo);
-  }
-
+  static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) { console.error("Admin Dashboard Error:", error, errorInfo); }
   render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white p-4">
           <h2 className="text-2xl font-bold text-red-500 mb-4">Dashboard Error</h2>
-          <button 
-            onClick={() => window.location.reload()}
-            className="bg-orange-500 hover:bg-orange-600 px-6 py-2 rounded font-bold"
-          >
-            Reload
-          </button>
+          <button onClick={() => window.location.reload()} className="bg-orange-500 hover:bg-orange-600 px-6 py-2 rounded font-bold">Reload</button>
         </div>
       );
     }
@@ -55,14 +43,20 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 }
 
 const App: React.FC = () => {
-  const [view, setView] = useState<string>('micro-qualify');
+  // UPDATED: Check URL for view parameter (Deep Linking)
+  const [view, setView] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    if (viewParam === 'assessment') return 'assessment';
+    if (viewParam === 'micro-qualify') return 'micro-qualify';
+    if (viewParam === 'welcome') return 'welcome';
+    return 'micro-qualify'; // Default
+  });
+
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  
-  // State for Dynamic Questions
   const [sections, setSections] = useState<Section[]>(SECTIONS);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
 
-  // Initialize answers with SECTIONS constant first
   const [answers, setAnswers] = useState<Answers>(() => {
     return SECTIONS.reduce((acc, section) => {
       acc[section.id] = Array(section.questions.length).fill(false);
@@ -157,7 +151,6 @@ const App: React.FC = () => {
         if (prevSubmission) {
             setPreviousScores(prevSubmission.scores);
         }
-        // Capture the new ID
         const newId = await submitAssessment(userInfo, scores, answers);
         setCurrentSubmissionId(newId);
         
@@ -212,7 +205,6 @@ const App: React.FC = () => {
     return Mountain;
   };
   
-  // --- RENDER LOGIC FOR ADMIN DASHBOARD ---
   if (view === 'admin-dashboard') {
     return (
       <ErrorBoundary>
@@ -270,7 +262,6 @@ const App: React.FC = () => {
                 Align your <span className="text-orange-500 font-medium glow-text-orange">Consciousness</span>, <span className="text-blue-400 font-medium">Connection</span>, <span className="text-green-400 font-medium">Contribution</span>, and <span className="text-purple-400 font-medium">Commitment</span> to unlock your highest potential.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-24">
-                {/* FIXED: Starts Assessment, not Micro-Qualify loop */}
                 <button 
                     onClick={() => setView('assessment')}
                     className="group relative px-12 py-6 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(249,115,22,0.4)] flex items-center gap-4 overflow-hidden ring-2 ring-orange-500/50 ring-offset-4 ring-offset-black"
@@ -512,3 +503,128 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+### 2. `components/Admin/DashboardLayout.tsx`
+**Fixes:**
+*   Replaces the single "Launch" button with the **Two Distinct Buttons**: "Qualify Client" and "Start Assessment".
+
+```typescript
+import React from 'react';
+import { LayoutDashboard, Users, Settings, LogOut, Zap, FileText, Database, ListChecks, ExternalLink, Filter, PlayCircle } from 'lucide-react';
+
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  currentTab: string;
+  onTabChange: (tab: string) => void;
+  onLogout: () => void;
+}
+
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
+  children, 
+  currentTab, 
+  onTabChange, 
+  onLogout 
+}) => {
+  const navItems = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'pipeline', label: 'Pipeline', icon: ListChecks },
+    { id: 'submissions', label: 'Submissions', icon: Users },
+    { id: 'reports', label: 'Reports & Export', icon: FileText },
+    { id: 'settings', label: 'Settings', icon: Settings },
+  ];
+
+  return (
+    <div className="flex h-screen bg-[#030305] overflow-hidden bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-gray-900 via-[#050505] to-black">
+      {/* Sidebar */}
+      <aside className="w-72 bg-[#0a0a0a]/80 backdrop-blur-2xl border-r border-white/5 flex flex-col relative z-20">
+        <div className="p-8 border-b border-white/5 flex items-center gap-3">
+          <div className="bg-orange-600/20 p-2 rounded-lg border border-orange-600/30">
+             <Zap className="text-orange-500 w-6 h-6" />
+          </div>
+          <div>
+            <span className="font-black text-xl tracking-tight text-white block">CHP Admin</span>
+            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Control Center</span>
+          </div>
+        </div>
+        
+        <nav className="flex-1 p-6 space-y-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onTabChange(item.id)}
+                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 ${
+                  isActive 
+                    ? 'bg-orange-600 text-white font-bold shadow-[0_0_20px_rgba(249,115,22,0.3)] transform translate-x-1' 
+                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <Icon size={20} className={isActive ? 'text-white' : 'text-gray-500'} />
+                {item.label}
+              </button>
+            );
+          })}
+
+          {/* NEW: Quick Launch Section */}
+          <div className="mt-6 pt-6 border-t border-white/5 space-y-3">
+            <p className="px-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Public Links</p>
+            
+            <button 
+                onClick={() => window.open(window.location.origin + '?view=micro-qualify', '_blank')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-orange-400 hover:bg-orange-900/10 rounded-xl transition-colors border border-orange-500/20 hover:border-orange-500/50"
+            >
+                <Filter size={18} />
+                Qualify Client
+            </button>
+            
+            <button 
+                onClick={() => window.open(window.location.origin + '?view=assessment', '_blank')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-blue-400 hover:bg-blue-900/10 rounded-xl transition-colors border border-blue-500/20 hover:border-blue-500/50"
+            >
+                <PlayCircle size={18} />
+                Start Assessment
+            </button>
+          </div>
+        </nav>
+
+        {/* Environment Indicator */}
+        <div className="px-6 pb-4">
+            <div className="bg-black/40 border border-white/5 rounded-xl p-4 flex items-center gap-4">
+                <div className="bg-green-500/20 p-2 rounded-full border border-green-500/20 relative">
+                    <Database size={16} className="text-green-500" />
+                    <div className="absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
+                </div>
+                <div>
+                    <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">System Status</div>
+                    <div className="text-xs text-gray-300 font-bold">Live Database</div>
+                </div>
+            </div>
+        </div>
+
+        <div className="p-6 border-t border-white/5">
+          <button 
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-900/10 hover:text-red-300 rounded-xl transition-colors border border-transparent hover:border-red-900/20"
+          >
+            <LogOut size={20} />
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto relative z-10 custom-scrollbar">
+        {/* Header Gradient Overlay */}
+        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-orange-900/10 to-transparent pointer-events-none"></div>
+        
+        <div className="max-w-7xl mx-auto p-10 relative">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default DashboardLayout;
