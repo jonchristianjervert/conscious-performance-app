@@ -9,6 +9,7 @@ const SESSIONS_COLLECTION = 'sessions';
 // This function saves the initial lead data from the Micro-Qualify form.
 export const createLead = async (data: Omit<Lead, 'id' | 'createdAt' | 'status'>): Promise<string> => {
   const timestamp = new Date().toISOString();
+  // Basic qualification logic (can be expanded)
   const isQualified = true; 
 
   const leadData: Omit<Lead, 'id'> = {
@@ -71,12 +72,7 @@ export const markLeadAsBooked = async (leadId: string) => {
 export const saveSession = async (sessionData: Omit<Session, 'id'>): Promise<string> => {
     if (isConfigured && db) {
         try {
-            // Check if session exists for this lead to update instead of create?
-            // For now, we just create a new snapshot or overwrite if we implemented ID tracking.
-            // A simple approach is to always add a new doc for history, or update if we passed an ID.
-            
-            // NOTE: In a full app, you might want to update existing. 
-            // For MVP, adding is safer (history), but fetching the LATEST is key.
+            // Save as a new document (Snapshot history)
             const docRef = await addDoc(collection(db, SESSIONS_COLLECTION), sessionData);
             return docRef.id;
         } catch (e) {
@@ -105,8 +101,11 @@ export const fetchSessionByLeadId = async (leadId: string): Promise<Session | nu
             return { id: doc.id, ...doc.data() } as Session;
         }
         return null;
-    } catch (e) {
+    } catch (e: any) {
         console.error("Error fetching session:", e);
+        if (e.code === 'failed-precondition') {
+            console.warn("MISSING INDEX: You need to create a composite index for 'sessions' (leadId ASC, date DESC) in Firebase Console.");
+        }
         return null;
     }
 };
