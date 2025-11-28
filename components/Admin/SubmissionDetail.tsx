@@ -30,6 +30,11 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
 
   if (!submission) return <div className="text-gray-400">Loading details...</div>;
 
+  // Safe fallback values
+  const profile = submission.userProfile || { name: 'Unknown', email: '', dob: '', occupation: '' };
+  const metadata = submission.metadata || { device: 'Unknown', location: 'Unknown' };
+  const scores = submission.scores || {};
+
   return (
     <div className="space-y-8 animate-fade-in">
       <button onClick={onBack} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4">
@@ -42,38 +47,38 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
           <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center text-xl font-bold text-orange-500">
-                {submission.userProfile.name.charAt(0)}
+                {profile.name ? profile.name.charAt(0) : '?'}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">{submission.userProfile.name}</h2>
-                <p className="text-sm text-gray-400">{submission.userProfile.email}</p>
+                <h2 className="text-xl font-bold text-white">{profile.name || 'Unknown User'}</h2>
+                <p className="text-sm text-gray-400">{profile.email || 'No Email'}</p>
               </div>
             </div>
             
             <div className="space-y-3 text-sm text-gray-300">
-              {submission.userProfile.occupation && (
+              {profile.occupation && (
                   <div className="flex items-center gap-3">
                     <Briefcase size={16} className="text-gray-500" />
-                    <span>{submission.userProfile.occupation}</span>
+                    <span>{profile.occupation}</span>
                   </div>
               )}
-              {submission.userProfile.dob && (
+              {profile.dob && (
                   <div className="flex items-center gap-3">
                     <User size={16} className="text-gray-500" />
-                    <span>DOB: {submission.userProfile.dob}</span>
+                    <span>DOB: {profile.dob}</span>
                   </div>
               )}
               <div className="flex items-center gap-3">
                 <Calendar size={16} className="text-gray-500" />
-                <span>Submitted: {new Date(submission.timestamp).toLocaleDateString()}</span>
+                <span>Submitted: {submission.timestamp ? new Date(submission.timestamp).toLocaleDateString() : 'Unknown Date'}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Smartphone size={16} className="text-gray-500" />
-                <span>{submission.metadata.device}</span>
+                <span>{metadata.device}</span>
               </div>
               <div className="flex items-center gap-3">
                 <MapPin size={16} className="text-gray-500" />
-                <span>{submission.metadata.location}</span>
+                <span>{metadata.location}</span>
               </div>
             </div>
           </div>
@@ -104,7 +109,12 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
         <div className="lg:col-span-2 space-y-6">
            <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 flex flex-col items-center">
              <h3 className="text-lg font-bold text-white mb-6 w-full text-left">Performance Model Visualization</h3>
-             <PerformanceModelChart scores={submission.scores} />
+             {/* Only render chart if scores exist */}
+             {Object.keys(scores).length > 0 ? (
+                 <PerformanceModelChart scores={scores as any} />
+             ) : (
+                 <div className="text-gray-500">No score data available.</div>
+             )}
            </div>
 
            {/* Client's AI Report (Safe Rendering) */}
@@ -130,12 +140,14 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
                 <h3 className="text-lg font-bold text-white mb-4">Raw Score Data</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {Object.entries(submission.scores).map(([key, val]) => (
+                    {Object.keys(scores).length > 0 ? Object.entries(scores).map(([key, val]) => (
                         <div key={key} className="bg-gray-900 p-3 rounded border border-gray-700">
                             <div className="text-xs text-gray-500 uppercase">{key}</div>
-                            <div className="text-xl font-bold text-white">{typeof val === 'number' ? val.toFixed(1) : val}</div>
+                            <div className="text-xl font-bold text-white">
+                                {typeof val === 'number' ? val.toFixed(1) : val}
+                            </div>
                         </div>
-                    ))}
+                    )) : <div className="text-gray-500 text-sm">No scores recorded.</div>}
                 </div>
            </div>
         </div>
@@ -153,7 +165,11 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
                       <h4 className="text-orange-400 font-bold uppercase text-xs tracking-wider mb-3">{section.title} ({section.category})</h4>
                       <div className="space-y-2">
                           {section.questions.map((q, idx) => {
-                              const isYes = submission.answers && submission.answers[section.id] && submission.answers[section.id][idx];
+                              // Deep safety check for answers array
+                              const isYes = submission.answers 
+                                         && submission.answers[section.id] 
+                                         && Array.isArray(submission.answers[section.id])
+                                         && submission.answers[section.id][idx];
                               return (
                                   <div key={idx} className="flex items-start gap-3 p-2 hover:bg-gray-700/30 rounded">
                                       <div className={`mt-1 flex-shrink-0 ${isYes ? 'text-green-500' : 'text-gray-600'}`}>
