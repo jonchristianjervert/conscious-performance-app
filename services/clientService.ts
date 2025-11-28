@@ -1,4 +1,3 @@
-
 import { db, isConfigured } from './firebase';
 import { collection, addDoc, updateDoc, doc, getDocs, query, orderBy, where, limit } from 'firebase/firestore';
 import { Lead, Session } from '../types';
@@ -6,15 +5,13 @@ import { Lead, Session } from '../types';
 const LEADS_COLLECTION = 'leads';
 const SESSIONS_COLLECTION = 'sessions';
 
-// This function saves the initial lead data from the Micro-Qualify form.
+// --- LEADS ---
+
 export const createLead = async (data: Omit<Lead, 'id' | 'createdAt' | 'status'>): Promise<string> => {
   const timestamp = new Date().toISOString();
-  // Basic qualification logic (can be expanded)
-  const isQualified = true; 
-
   const leadData: Omit<Lead, 'id'> = {
     ...data,
-    status: isQualified ? 'qualified' : 'disqualified',
+    status: 'qualified',
     createdAt: timestamp,
   };
 
@@ -27,7 +24,6 @@ export const createLead = async (data: Omit<Lead, 'id' | 'createdAt' | 'status'>
       throw e;
     }
   } else {
-    console.log("Mock Lead Created:", leadData);
     return `mock_lead_${Date.now()}`;
   }
 };
@@ -62,17 +58,16 @@ export const markLeadAsBooked = async (leadId: string) => {
       const docRef = doc(db, LEADS_COLLECTION, leadId);
       await updateDoc(docRef, { status: 'booked' });
     } catch (e) {
-      console.error("Error updating lead status:", e);
+      console.error("Error marking lead booked:", e);
     }
   }
 };
 
-// --- PHASE 3: SESSIONS ---
+// --- SESSIONS (Coach Mode) ---
 
 export const saveSession = async (sessionData: Omit<Session, 'id'>): Promise<string> => {
     if (isConfigured && db) {
         try {
-            // Save as a new document (Snapshot history)
             const docRef = await addDoc(collection(db, SESSIONS_COLLECTION), sessionData);
             return docRef.id;
         } catch (e) {
@@ -80,32 +75,36 @@ export const saveSession = async (sessionData: Omit<Session, 'id'>): Promise<str
             throw e;
         }
     } else {
-        console.log("Mock Session Saved:", sessionData);
         return "mock_session_id";
     }
 };
 
+// UPDATED FUNCTION: Removes orderBy to fix Index Requirement
 export const fetchSessionByLeadId = async (leadId: string): Promise<Session | null> => {
-    if (!isConfigured || !db) return null;
+  if (!isConfigured || !db) return null;
 
-    try {
-        const q = query(
-            collection(db, SESSIONS_COLLECTION),
-            where('leadId', '==', leadId),
-            orderBy('date', 'desc'),
-            limit(1)
-        );
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-            const doc = snapshot.docs[0];
-            return { id: doc.id, ...doc.data() } as Session;
-        }
-        return null;
-    } catch (e: any) {
-        console.error("Error fetching session:", e);
-        if (e.code === 'failed-precondition') {
-            console.warn("MISSING INDEX: You need to create a composite index for 'sessions' (leadId ASC, date DESC) in Firebase Console.");
-        }
-        return null;
+  try {
+    // We query ONLY by leadId to avoid complex Composite Index requirements.
+    // If multiple sessions exist, this gets one of them.
+    const q = query(
+      collection(db, SESSIONS_COLLECTION),
+      where("leadId", "==", leadId),
+      limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+      console.log(`[sessions] No session found for leadId=${leadId}`);
+      return null;
     }
-};
+
+    const sessionDoc = snapshot.docs[0];
+    const data = sessionDoc.data();
+
+    console.log("[sessions] Session loaded:", data);
+
+    return { id: sessionDoc.id, ...data } as Session;
+  } catch (e) {
+    console.error("Error fetching session by leadId:", e);
+    return null;
+  }
