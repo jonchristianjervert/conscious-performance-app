@@ -34,6 +34,7 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
             console.log("Loading session for lead:", lead.id);
             const existingSession = await fetchSessionByLeadId(lead.id);
             if (existingSession) {
+                console.log("Found existing session, populating state...");
                 // Merge notes carefully
                 setNotes(prev => ({
                     challenges: existingSession.notes.challenges || prev.challenges,
