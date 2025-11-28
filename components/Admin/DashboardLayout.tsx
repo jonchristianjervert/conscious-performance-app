@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { LayoutDashboard, Users, Settings, LogOut, Zap, FileText, Database, ListChecks } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Zap, FileText, Database, ListChecks, ExternalLink, Filter, PlayCircle } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -56,6 +55,27 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               </button>
             );
           })}
+
+          {/* NEW: Quick Launch Section */}
+          <div className="mt-6 pt-6 border-t border-white/5 space-y-3">
+            <p className="px-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Public Links</p>
+            
+            <button 
+                onClick={() => window.open(window.location.origin + '?view=micro-qualify', '_blank')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-orange-400 hover:bg-orange-900/10 rounded-xl transition-colors border border-orange-500/20 hover:border-orange-500/50"
+            >
+                <Filter size={18} />
+                Qualify Client
+            </button>
+            
+            <button 
+                onClick={() => window.open(window.location.origin + '?view=assessment', '_blank')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-blue-400 hover:bg-blue-900/10 rounded-xl transition-colors border border-blue-500/20 hover:border-blue-500/50"
+            >
+                <PlayCircle size={18} />
+                Start Assessment
+            </button>
+          </div>
         </nav>
 
         {/* Environment Indicator */}
