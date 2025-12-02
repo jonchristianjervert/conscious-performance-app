@@ -21,20 +21,32 @@ const Reports = React.lazy(() => import('./components/Admin/Reports'));
 const Settings = React.lazy(() => import('./components/Admin/Settings'));
 const SessionMode = React.lazy(() => import('./components/Admin/SessionMode')); 
 
-// Error Boundary
+// Error Boundary for Admin Components
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: React.ReactNode}) {
     super(props);
     this.state = { hasError: false, error: null };
   }
-  static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) { console.error("Admin Dashboard Error:", error, errorInfo); }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Admin Dashboard Error:", error, errorInfo);
+  }
+
   render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white p-4">
           <h2 className="text-2xl font-bold text-red-500 mb-4">Dashboard Error</h2>
-          <button onClick={() => window.location.reload()} className="bg-orange-500 hover:bg-orange-600 px-6 py-2 rounded font-bold">Reload</button>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-orange-500 hover:bg-orange-600 px-6 py-2 rounded font-bold"
+          >
+            Reload
+          </button>
         </div>
       );
     }
@@ -54,9 +66,12 @@ const App: React.FC = () => {
   });
 
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  
+  // State for Dynamic Questions
   const [sections, setSections] = useState<Section[]>(SECTIONS);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
 
+  // Initialize answers with SECTIONS constant first
   const [answers, setAnswers] = useState<Answers>(() => {
     return SECTIONS.reduce((acc, section) => {
       acc[section.id] = Array(section.questions.length).fill(false);
@@ -67,7 +82,7 @@ const App: React.FC = () => {
   const [userInfo, setUserInfo] = useState({ name: '', email: '', dob: '', occupation: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousScores, setPreviousScores] = useState<Scores | null>(null);
-  const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(null);
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(null); // New State
   
   // Admin State
   const [adminTab, setAdminTab] = useState('overview');
@@ -151,6 +166,7 @@ const App: React.FC = () => {
         if (prevSubmission) {
             setPreviousScores(prevSubmission.scores);
         }
+        // Capture the new ID
         const newId = await submitAssessment(userInfo, scores, answers);
         setCurrentSubmissionId(newId);
         
@@ -172,6 +188,7 @@ const App: React.FC = () => {
       }
       setGeneratingPDF(true);
       try {
+        // Dynamic import to fix Vercel crash
         // @ts-ignore
         const html2pdfModule = await import('html2pdf.js');
         const html2pdfFn = html2pdfModule.default || html2pdfModule;
@@ -205,6 +222,7 @@ const App: React.FC = () => {
     return Mountain;
   };
   
+  // --- RENDER LOGIC FOR ADMIN DASHBOARD ---
   if (view === 'admin-dashboard') {
     return (
       <ErrorBoundary>
@@ -262,6 +280,7 @@ const App: React.FC = () => {
                 Align your <span className="text-orange-500 font-medium glow-text-orange">Consciousness</span>, <span className="text-blue-400 font-medium">Connection</span>, <span className="text-green-400 font-medium">Contribution</span>, and <span className="text-purple-400 font-medium">Commitment</span> to unlock your highest potential.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-24">
+                {/* FIXED: Starts Assessment, not Micro-Qualify loop */}
                 <button 
                     onClick={() => setView('assessment')}
                     className="group relative px-12 py-6 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(249,115,22,0.4)] flex items-center gap-4 overflow-hidden ring-2 ring-orange-500/50 ring-offset-4 ring-offset-black"
@@ -481,6 +500,7 @@ const App: React.FC = () => {
         {view === 'welcome' && (
             <div className="relative">
                 {renderWelcome()}
+                {/* Note: Added z-50 to ensure it is clickable if needed, though it's just text */}
                 <div className="absolute top-4 left-0 w-full text-center z-50">
                     <div className="inline-block px-4 py-2 bg-black/50 backdrop-blur-md rounded-full border border-white/10 text-xs text-gray-400">
                         Please wait for your coach before starting the assessment.
