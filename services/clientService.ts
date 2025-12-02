@@ -85,7 +85,7 @@ export const fetchSessionByLeadId = async (leadId: string): Promise<Session | nu
     try {
         console.log("Fetching session for Lead ID:", leadId);
         
-        // SIMPLE QUERY: No orderBy, No limit. Just get matches.
+        // SIMPLE QUERY: No orderBy. Just get matches.
         // This avoids "Missing Index" errors.
         const q = query(
             collection(db, SESSIONS_COLLECTION),
@@ -101,6 +101,7 @@ export const fetchSessionByLeadId = async (leadId: string): Promise<Session | nu
 
         // Sort in Javascript (Client-side) to find the most recent
         const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Session));
+        // Sort descending (newest first)
         docs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         console.log("Session Loaded:", docs[0]);
