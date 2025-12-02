@@ -83,32 +83,43 @@ export const fetchSessionByLeadId = async (leadId: string): Promise<Session | nu
     if (!isConfigured || !db) return null;
 
     try {
-        console.log("Fetching session for Lead ID:", leadId);
-        
-        // SIMPLE QUERY: No orderBy. Just get matches.
-        // This avoids "Missing Index" errors.
         const q = query(
             collection(db, SESSIONS_COLLECTION),
             where('leadId', '==', leadId)
         );
-        
         const snapshot = await getDocs(q);
-        
-        if (snapshot.empty) {
-            console.log("No previous sessions found.");
-            return null;
-        }
+        if (snapshot.empty) return null;
 
-        // Sort in Javascript (Client-side) to find the most recent
         const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Session));
-        // Sort descending (newest first)
         docs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-        console.log("Session Loaded:", docs[0]);
         return docs[0];
-
     } catch (e) {
         console.error("Error fetching session:", e);
         return null;
+    }
+};
+
+// --- NEW FUNCTION: Fetch Sessions by Email (For SubmissionDetail) ---
+export const fetchSessionsByEmail = async (email: string): Promise<Session[]> => {
+    if (!isConfigured || !db) return [];
+
+    try {
+        // 1. Find Lead ID by Email
+        const leadQ = query(collection(db, LEADS_COLLECTION), where('email', '==', email), limit(1));
+        const leadSnap = await getDocs(leadQ);
+        
+        if (leadSnap.empty) return [];
+        const leadId = leadSnap.docs[0].id;
+
+        // 2. Find Sessions by Lead ID
+        const sessionQ = query(collection(db, SESSIONS_COLLECTION), where('leadId', '==', leadId));
+        const sessionSnap = await getDocs(sessionQ);
+        
+        const sessions = sessionSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Session));
+        // Sort newest first
+        return sessions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } catch (e) {
+        console.error("Error fetching sessions by email:", e);
+        return [];
     }
 };
