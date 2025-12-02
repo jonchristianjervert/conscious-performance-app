@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LayoutDashboard, Users, Settings, LogOut, Zap, FileText, Database, ListChecks, ExternalLink, Filter, PlayCircle } from 'lucide-react';
 
@@ -63,17 +62,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             
             <button 
                 onClick={() => window.open(window.location.origin + '?view=micro-qualify', '_blank')}
-                className="w-full flex items-center gap-3 px-4 py-3 text-orange-400 hover:bg-orange-900/10 rounded-xl transition-colors border border-orange-500/20 hover:border-orange-500/50"
+                className="w-full flex items-center gap-3 px-4 py-3 text-orange-400 hover:bg-orange-900/10 rounded-xl transition-colors border border-orange-500/20 hover:border-orange-500/50 text-sm font-medium"
             >
-                <Filter size={18} />
+                <Filter size={16} />
                 Qualify Client
             </button>
             
             <button 
-                onClick={() => window.open(window.location.origin + '?view=assessment', '_blank')}
-                className="w-full flex items-center gap-3 px-4 py-3 text-blue-400 hover:bg-blue-900/10 rounded-xl transition-colors border border-blue-500/20 hover:border-blue-500/50"
+                onClick={() => window.open(window.location.origin + '?view=welcome', '_blank')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-blue-400 hover:bg-blue-900/10 rounded-xl transition-colors border border-blue-500/20 hover:border-blue-500/50 text-sm font-medium"
             >
-                <PlayCircle size={18} />
+                <PlayCircle size={16} />
                 Start Assessment
             </button>
           </div>
