@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lead, ActivationPlan } from '../../types';
-import { ArrowLeft, Save, Sparkles, CheckCircle, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Sparkles, CheckCircle, FileText, Database } from 'lucide-react';
 import { generateActivationPlan } from '../../services/geminiService';
 import { saveSession, fetchSessionByLeadId } from '../../services/clientService';
 
@@ -26,6 +26,7 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
   const [plan, setPlan] = useState<ActivationPlan | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Load existing session data on mount
   useEffect(() => {
@@ -34,8 +35,9 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
             console.log("Loading session for lead:", lead.id);
             const existingSession = await fetchSessionByLeadId(lead.id);
             if (existingSession) {
-                console.log("Found existing session, populating state...");
-                // Merge notes carefully
+                console.log("Found existing session, populating state:", existingSession);
+                
+                // Populate state with saved data
                 setNotes(prev => ({
                     challenges: existingSession.notes.challenges || prev.challenges,
                     goals: existingSession.notes.goals || '',
@@ -50,6 +52,7 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
                     setPlan(existingSession.activationPlan);
                 }
                 setIsSaved(true);
+                setDataLoaded(true);
             }
         }
         setIsLoading(false);
@@ -83,13 +86,14 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
             status: 'completed'
         });
         setIsSaved(true);
+        setDataLoaded(true);
     } catch (e) {
         alert("Failed to save to database.");
     }
   };
 
   if (isLoading) {
-      return <div className="h-full flex items-center justify-center bg-[#050505] text-gray-500">Loading Session...</div>;
+      return <div className="h-full flex items-center justify-center bg-[#050505] text-gray-500">Loading Session Data...</div>;
   }
 
   return (
@@ -104,6 +108,11 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead, onBack }) => {
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <span className="text-green-500 text-xs font-bold uppercase tracking-widest">Live Session</span>
+                    {dataLoaded && (
+                        <div className="flex items-center gap-1 text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                            <Database size={10} /> RESTORED
+                        </div>
+                    )}
                 </div>
                 <h1 className="text-xl font-bold">{lead.name}</h1>
             </div>
