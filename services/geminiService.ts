@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { Scores, Submission, DashboardMetrics } from "../types";
 
@@ -51,7 +50,6 @@ export const generateAdminTrendAnalysis = async (metrics: DashboardMetrics): Pro
     const ai = getAIClient();
     if (!ai) return "API key missing.";
 
-    // Identify top 3 highest and lowest performing questions
     const sortedQuestions = [...metrics.questionStats].sort((a, b) => b.percentageTrue - a.percentageTrue);
     const top3 = sortedQuestions.slice(0, 3).map(q => `"${q.questionText}" (${q.percentageTrue}% positive)`);
     const bottom3 = sortedQuestions.slice(-3).map(q => `"${q.questionText}" (${q.percentageTrue}% positive)`);
@@ -141,8 +139,6 @@ export const generateWeeklyReportSummary = async (range: string, metrics: Dashbo
     }
 };
 
-// --- NEW PHASE 3: SESSION PLAN GENERATOR ---
-
 export const generateActivationPlan = async (name: string, notes: { challenges: string, goals: string, gap: string }): Promise<string> => {
     const ai = getAIClient();
     if (!ai) return "API key missing.";
@@ -182,5 +178,59 @@ export const generateActivationPlan = async (name: string, notes: { challenges: 
     } catch (error) {
         console.error("AI Plan Gen Error", error);
         return "{}";
+    }
+};
+
+// --- NEW: ZERKERS PROGRAM RECOMMENDATION ENGINE ---
+
+export const generateProgramRecommendation = async (submission: Submission): Promise<string> => {
+    const ai = getAIClient();
+    if (!ai) return "API key missing.";
+
+    const prompt = `
+    You are the Sales Director for Zerkers, an adventure-based leadership development company.
+    Based on the client's assessment data, recommend the SINGLE best program fit.
+
+    CLIENT DATA:
+    Name: ${submission.userProfile.name}
+    Occupation: ${submission.userProfile.occupation || "Unknown"}
+    Scores: ${JSON.stringify(submission.scores)}
+
+    ZERKERS PROGRAM CATALOG:
+    1. "Challenge Z.E.R.O." (Online, ~$99/mo)
+       - Ideal for: People lacking discipline, focus, or mental toughness. Low scores in Energy/Health/Fitness. Needs a system.
+    
+    2. "The 5 Challenges" (Online Premium, ~$799/mo)
+       - Ideal for: Leaders who want deep mastery but can't travel yet. Needs community + accountability.
+    
+    3. "1:1 Alignment Accelerator" (Coaching, $3k-$5k/12 weeks)
+       - Ideal for: High-performing Founders/Execs who are burned out, misaligned, or "successful but empty." High Career score but low Love/Health/Adventure.
+    
+    4. "Executive Overlanding Retreat" (In-Person, 3 Days)
+       - Ideal for: Stressed executives needing a hard reset in nature. High stress indicators.
+    
+    5. "Leadership Intensive" (In-Person, 1-2 Days)
+       - Ideal for: Managers needing presence, communication skills, and EQ. Low Tribe/Connection scores.
+
+    OUTPUT FORMAT (HTML):
+    Provide a specific recommendation in this HTML structure (no markdown):
+    <div class="space-y-3">
+        <div class="font-bold text-lg text-emerald-400">Recommended: [Program Name]</div>
+        <p class="text-sm text-gray-300"><strong>Why:</strong> [One sentence connecting their lowest score to the program benefit].</p>
+        <div class="bg-emerald-900/30 p-3 rounded border border-emerald-500/30">
+            <p class="text-xs text-emerald-200 font-bold uppercase mb-1">Sales Pivot / Talking Point</p>
+            <p class="text-sm italic text-gray-300">"[A direct question or statement the coach can say to transition to this offer]."--</p>
+        </div>
+    </div>
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt
+        });
+        return response.text;
+    } catch (error) {
+        return "Failed to generate recommendation.";
     }
 };
