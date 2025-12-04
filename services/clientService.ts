@@ -83,23 +83,37 @@ export const fetchSessionByLeadId = async (leadId: string): Promise<Session | nu
     if (!isConfigured || !db) return null;
 
     try {
+        console.log("Fetching session for Lead ID:", leadId);
+        
+        // SIMPLE QUERY: No orderBy. Just get matches.
+        // This avoids "Missing Index" errors.
         const q = query(
             collection(db, SESSIONS_COLLECTION),
             where('leadId', '==', leadId)
         );
+        
         const snapshot = await getDocs(q);
-        if (snapshot.empty) return null;
+        
+        if (snapshot.empty) {
+            console.log("No previous sessions found.");
+            return null;
+        }
 
+        // Sort in Javascript (Client-side) to find the most recent
         const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Session));
+        // Sort descending (newest first)
         docs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        console.log("Session Loaded:", docs[0]);
         return docs[0];
+
     } catch (e) {
         console.error("Error fetching session:", e);
         return null;
     }
 };
 
-// --- NEW FUNCTION: Fetch Sessions by Email (For SubmissionDetail) ---
+// --- FETCH SESSIONS BY EMAIL (For Submission Detail) ---
 export const fetchSessionsByEmail = async (email: string): Promise<Session[]> => {
     if (!isConfigured || !db) return [];
 
