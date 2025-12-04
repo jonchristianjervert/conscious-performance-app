@@ -212,7 +212,7 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
                         <div key={key} className="bg-gray-900 p-3 rounded-lg border border-gray-700 flex flex-col items-center justify-center text-center">
                             <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">{key}</div>
                             <div className={`text-xl font-black ${typeof val === 'number' && val >= 6 ? 'text-green-400' : typeof val === 'number' && val >= 4 ? 'text-orange-400' : 'text-red-400'}`}>
-                                {typeof val === 'number' ? val.toFixed(1) : val}
+                                {typeof val === 'number' ? val.toFixed(1) : String(val)}
                             </div>
                         </div>
                     )) : <div className="col-span-4 text-center text-gray-500 text-sm">No scores recorded.</div>}
