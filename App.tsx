@@ -82,7 +82,7 @@ const App: React.FC = () => {
   const [userInfo, setUserInfo] = useState({ name: '', email: '', dob: '', occupation: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousScores, setPreviousScores] = useState<Scores | null>(null);
-  const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(null);
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(null); // New State
   
   // Admin State
   const [adminTab, setAdminTab] = useState('overview');
@@ -323,6 +323,8 @@ const App: React.FC = () => {
         </div>
     </div>
   );
+
+  // ... rest of file (renderAssessment, renderLeadCapture, etc.) matches previous versions ...
 
   const renderAssessment = () => {
     if (loadingQuestions) return <div className="min-h-screen flex items-center justify-center text-orange-500">Loading Assessment...</div>;
