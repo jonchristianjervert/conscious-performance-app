@@ -181,8 +181,6 @@ export const generateActivationPlan = async (name: string, notes: { challenges: 
     }
 };
 
-// --- NEW: ZERKERS PROGRAM RECOMMENDATION ENGINE ---
-
 export const generateProgramRecommendation = async (submission: Submission): Promise<string> => {
     const ai = getAIClient();
     if (!ai) return "API key missing.";
@@ -232,5 +230,80 @@ export const generateProgramRecommendation = async (submission: Submission): Pro
         return response.text;
     } catch (error) {
         return "Failed to generate recommendation.";
+    }
+};
+
+// --- NEW: ADVANCED RESEARCH REPORT ---
+
+export const generateAdvancedResearchReport = async (occupation: string, allSubmissions: Submission[]): Promise<string> => {
+    const ai = getAIClient();
+    if (!ai) return "API key missing.";
+
+    // Pre-process data to save tokens and context
+    const segment = allSubmissions.filter(s => 
+        s.userProfile.occupation && s.userProfile.occupation.toLowerCase().includes(occupation.toLowerCase())
+    );
+
+    const segmentData = segment.map(s => ({
+        role: s.userProfile.occupation,
+        scores: s.scores
+    }));
+
+    const globalDataSample = allSubmissions.slice(0, 50).map(s => s.scores); // Sample for global baseline
+
+    const prompt = `
+    SYSTEM INSTRUCTION
+    You are a research-grade analytical engine responsible for creating comprehensive, academically rigorous administrative reports based on the Conscious Human Performance Assessment dataset. Your output must match the quality of elite institutions such as Harvard Business Review, Stanford GSB, and MIT Sloan.
+
+    CORE OBJECTIVES
+    1. Segment Analysis: Analyze the occupation group: "${occupation}".
+    2. Trends: Evaluate trends within Consciousness, Connection, Contribution, Commitment, Adventure.
+    3. External Research: Integrate findings from HBR, McKinsey, Gallup, etc.
+    4. Benchmarking: Compare the Segment vs Global trends.
+
+    DATASET CONTEXT
+    Target Segment ("${occupation}") Count: ${segment.length}
+    Global Dataset Count: ${allSubmissions.length}
+    
+    Segment Data Sample (JSON):
+    ${JSON.stringify(segmentData.slice(0, 30))} 
+
+    Global Baseline Sample (JSON):
+    ${JSON.stringify(globalDataSample)}
+
+    REPORT STRUCTURE REQUIRED (Use Markdown):
+    
+    # Advanced Research Report: ${occupation} Performance Profile
+
+    ## 1. Executive Summary
+    (Ultra-Short 1-Paragraph Summary for high-level executives)
+
+    ## 2. Key Findings & Behavioral Archetypes
+    (Identify patterns, strengths, weaknesses. Generate 3 behavioral archetypes for this occupation.)
+
+    ## 3. Comparative Analysis (Segment vs Global)
+    (How does this group compare to the average? Use specific score differences.)
+
+    ## 4. Risk & Opportunity Indicators
+    (Burnout predictors, misalignment patterns, leadership leverage points.)
+
+    ## 5. Strategic Implications & Recommendations
+    (High-impact interventions. "Fastest win" + "Deepest long-term lever".)
+
+    ## 6. Leadership Maturity Score (LMS)
+    (Generate a composite score based on Self-Awareness, Regulation, Alignment.)
+
+    Make it data-driven, strategic, and concise.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt
+        });
+        return response.text;
+    } catch (error) {
+        console.error(error);
+        return "Failed to generate research report.";
     }
 };
