@@ -3,8 +3,8 @@ import { Lead, ActivationPlan } from '../../types';
 import { ArrowLeft, Save, Sparkles, CheckCircle, FileText, Database } from 'lucide-react';
 import { generateActivationPlan } from '../../services/geminiService';
 import { saveSession, fetchSessionByLeadId } from '../../services/clientService';
-import { doc, getDoc } from 'firebase/firestore'; 
-import { db } from '../../services/firebase';
+import { doc, getDoc } from 'firebase/firestore'; // Import Firestore helpers
+import { db } from '../../services/firebase';     // Import DB
 
 interface SessionModeProps {
   lead: Lead;
@@ -12,7 +12,7 @@ interface SessionModeProps {
 }
 
 const SessionMode: React.FC<SessionModeProps> = ({ lead: initialLead, onBack }) => {
-  const [lead, setLead] = useState<Lead>(initialLead); 
+  const [lead, setLead] = useState<Lead>(initialLead); // Local state for lead
   
   const [notes, setNotes] = useState({
     challenges: '',
@@ -32,9 +32,10 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead: initialLead, onBack }) 
   const [isLoading, setIsLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  // 1. Ensure we have the full lead data
+  // 1. Ensure we have the full lead data (Fix for "Unknown" issue)
   useEffect(() => {
     const fetchFullLead = async () => {
+        // If the passed lead is missing data (like name is 'Unknown' or responses are missing), fetch it.
         if (initialLead.id && initialLead.id !== 'err' && (!initialLead.responses || initialLead.name === 'Unknown')) {
             console.log("Lead data incomplete. Fetching full details for:", initialLead.id);
             try {
@@ -53,7 +54,7 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead: initialLead, onBack }) 
     fetchFullLead();
   }, [initialLead]);
 
-  // 2. Load existing session data
+  // 2. Load existing session data (Fix for "Data Not Loading")
   useEffect(() => {
     const loadSession = async () => {
         if (lead.id && lead.id !== 'err') {
@@ -86,12 +87,13 @@ const SessionMode: React.FC<SessionModeProps> = ({ lead: initialLead, onBack }) 
         setIsLoading(false);
     };
     
+    // Only load session once we have the lead ID
     if (lead.id) {
         loadSession();
     } else {
-        setIsLoading(false);
+        setIsLoading(false); // Stop loading if no ID
     }
-  }, [lead.id, lead.responses]);
+  }, [lead.id, lead.responses]); // Re-run if lead updates
 
   const handleGenerate = async () => {
     setIsGenerating(true);
