@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, Suspense, useRef, useEffect } from 'react';
 import { SECTIONS } from './constants';
 import { Answers, Scores, Section, Lead } from './types';
@@ -8,7 +9,7 @@ import { sendSubmissionEmails } from './services/automation';
 import { getQuestions } from './services/questionService';
 import { fetchLeads } from './services/clientService';
 import MicroQualify from './components/MicroQualify'; 
-import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, Star, Activity, PlayCircle, Zap, Heart, Briefcase, Dumbbell, Mountain, CheckCircle, XCircle, ChevronDown, ChevronUp, Download, User, Calendar } from 'lucide-react';
+import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, Star, Activity, PlayCircle, Zap, Heart, Briefcase, Dumbbell, Mountain, CheckCircle, XCircle, ChevronDown, ChevronUp, Download, User, Calendar, Building2, Users } from 'lucide-react';
 
 // Lazy Load Admin Components
 const Login = React.lazy(() => import('./components/Admin/Login'));
@@ -65,6 +66,8 @@ const App: React.FC = () => {
     return 'micro-qualify'; // Default
   });
 
+  const [assessmentType, setAssessmentType] = useState<'personal' | 'corporate'>('personal');
+
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   
   // State for Dynamic Questions
@@ -79,7 +82,7 @@ const App: React.FC = () => {
     }, {} as Answers);
   });
 
-  const [userInfo, setUserInfo] = useState({ name: '', email: '', dob: '', occupation: '' });
+  const [userInfo, setUserInfo] = useState({ name: '', email: '', dob: '', occupation: '', companyName: '', companySize: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousScores, setPreviousScores] = useState<Scores | null>(null);
   const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(null); // New State
@@ -167,7 +170,7 @@ const App: React.FC = () => {
             setPreviousScores(prevSubmission.scores);
         }
         // Capture the new ID
-        const newId = await submitAssessment(userInfo, scores, answers);
+        const newId = await submitAssessment(userInfo, scores, answers, assessmentType);
         setCurrentSubmissionId(newId);
         
         await sendSubmissionEmails(userInfo, scores);
@@ -280,18 +283,28 @@ const App: React.FC = () => {
                 Align your <span className="text-orange-500 font-medium glow-text-orange">Consciousness</span>, <span className="text-blue-400 font-medium">Connection</span>, <span className="text-green-400 font-medium">Contribution</span>, and <span className="text-purple-400 font-medium">Commitment</span> to unlock your highest potential.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-8">
-                {/* FIXED: Starts Assessment (Q1) directly */}
+                {/* Personal Assessment */}
                 <button 
-                    onClick={() => setView('assessment')}
-                    className="group relative px-12 py-6 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(249,115,22,0.4)] flex items-center gap-4 overflow-hidden ring-2 ring-orange-500/50 ring-offset-4 ring-offset-black"
+                    onClick={() => { setAssessmentType('personal'); setView('assessment'); }}
+                    className="group relative px-10 py-6 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(249,115,22,0.4)] flex items-center gap-3 overflow-hidden ring-2 ring-orange-500/50 ring-offset-4 ring-offset-black"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                     Start Journey
-                    <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </button>
+                
+                {/* Corporate Assessment (NEW) */}
+                <button 
+                    onClick={() => { setAssessmentType('corporate'); setView('assessment'); }}
+                    className="group px-10 py-6 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(30,41,59,0.4)] flex items-center gap-3 border border-slate-600 hover:border-slate-500"
+                >
+                    <Building2 size={20} className="text-blue-400" />
+                    For Leaders / Orgs
+                </button>
+
+                {/* Coach Login */}
                 <button 
                     onClick={() => setView('admin-login')} 
-                    className="px-10 py-6 bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-medium rounded-full transition-all border border-white/10 hover:border-white/30 backdrop-blur-sm flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                    className="px-8 py-6 bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-medium rounded-full transition-all border border-white/10 hover:border-white/30 backdrop-blur-sm flex items-center gap-2"
                 >
                     <ShieldCheck size={18} />
                     Coach Login
@@ -368,7 +381,12 @@ const App: React.FC = () => {
           {currentSectionIndex < sections.length - 1 ? (
             <button onClick={() => setCurrentSectionIndex(currentSectionIndex + 1)} className="group bg-white text-black hover:bg-gray-200 font-bold py-4 px-10 rounded-full transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-3">Next <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" /></button>
           ) : (
-            <button onClick={() => setView('lead-capture')} className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold py-4 px-12 rounded-full transition-all transform hover:scale-105 shadow-[0_0_30px_rgba(249,115,22,0.5)]">Complete Profile</button>
+            <button 
+                onClick={() => assessmentType === 'corporate' ? setView('corporate-capture') : setView('lead-capture')} 
+                className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold py-4 px-12 rounded-full transition-all transform hover:scale-105 shadow-[0_0_30px_rgba(249,115,22,0.5)]"
+            >
+                Complete Profile
+            </button>
           )}
         </div>
       </div>
@@ -396,12 +414,53 @@ const App: React.FC = () => {
         </div>
     </div>
   );
+
+  const renderCorporateCapture = () => (
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="glass-panel p-10 md:p-16 rounded-3xl border border-white/10 text-center animate-fade-in w-full max-w-lg relative z-10 shadow-2xl">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(59,130,246,0.4)] transform -rotate-3">
+                <Building2 className="text-white w-10 h-10" />
+            </div>
+            <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Org. Health</h2>
+            <p className="text-gray-400 mb-10 text-lg">Generate your organization's performance baseline.</p>
+            <form onSubmit={handleAssessmentComplete} className="space-y-6 text-left">
+                <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Full Name</label><input type="text" required className="input-field text-lg" value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} placeholder="Leader Name" /></div>
+                <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Work Email</label><input type="email" required className="input-field text-lg" value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} placeholder="name@company.com" /></div>
+                
+                {/* Corporate Specific Fields */}
+                <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Company Name</label><input type="text" required className="input-field text-lg" value={userInfo.companyName} onChange={(e) => setUserInfo({...userInfo, companyName: e.target.value})} placeholder="Organization Name" /></div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Your Role</label><input type="text" required className="input-field text-lg" value={userInfo.occupation} onChange={(e) => setUserInfo({...userInfo, occupation: e.target.value})} placeholder="CEO, VP, etc." /></div>
+                  <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Team Size</label>
+                      <select required className="input-field text-lg" value={userInfo.companySize} onChange={(e) => setUserInfo({...userInfo, companySize: e.target.value})}>
+                          <option value="">Select...</option>
+                          <option value="1-10">1-10</option>
+                          <option value="11-50">11-50</option>
+                          <option value="51-200">51-200</option>
+                          <option value="200+">200+</option>
+                      </select>
+                  </div>
+                </div>
+
+                <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-5 rounded-xl transition-all mt-6 shadow-[0_0_30px_rgba(59,130,246,0.3)] text-lg hover:scale-[1.02]">{isSubmitting ? 'Generating Report...' : 'View Corporate Insights'}</button>
+            </form>
+        </div>
+    </div>
+  );
   
   const renderResults = () => (
      <div className="max-w-7xl mx-auto pt-12 px-6 pb-20 animate-fade-in min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div>
-            <div className="flex items-center gap-2 mb-3"><div className="h-1 w-10 bg-orange-500 rounded-full"></div><div className="text-orange-500 font-bold tracking-widest uppercase text-xs">Official Analysis</div></div>
+            <div className="flex items-center gap-2 mb-3">
+                <div className={`h-1 w-10 ${assessmentType === 'corporate' ? 'bg-blue-500' : 'bg-orange-500'} rounded-full`}></div>
+                <div className={`${assessmentType === 'corporate' ? 'text-blue-500' : 'text-orange-500'} font-bold tracking-widest uppercase text-xs`}>
+                    {assessmentType === 'corporate' ? 'Organizational Analysis' : 'Official Analysis'}
+                </div>
+            </div>
             <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">Performance <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-600">Profile</span></h2>
           </div>
           <div className="flex gap-4">
@@ -419,13 +478,17 @@ const App: React.FC = () => {
          </div>
       )}
       <div className="glass-panel p-6 rounded-2xl mb-8 flex flex-col md:flex-row gap-6 items-center md:items-start border border-white/5">
-         <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">{userInfo.name.charAt(0)}</div>
+         <div className={`w-16 h-16 bg-gradient-to-br ${assessmentType === 'corporate' ? 'from-blue-500 to-blue-700' : 'from-orange-500 to-red-600'} rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg`}>
+             {assessmentType === 'corporate' ? <Building2 size={32} /> : userInfo.name.charAt(0)}
+         </div>
          <div className="flex-1 text-center md:text-left">
             <h3 className="text-2xl font-bold text-white">{userInfo.name}</h3>
+            {assessmentType === 'corporate' && <p className="text-blue-400 font-bold text-lg">{userInfo.companyName}</p>}
             <div className="flex flex-wrap gap-4 mt-2 justify-center md:justify-start text-sm text-gray-400">
                <div className="flex items-center gap-1"><User size={14}/> {userInfo.email}</div>
                {userInfo.occupation && <div className="flex items-center gap-1"><Briefcase size={14}/> {userInfo.occupation}</div>}
                {userInfo.dob && <div className="flex items-center gap-1"><Calendar size={14}/> {userInfo.dob}</div>}
+               {userInfo.companySize && <div className="flex items-center gap-1"><Users size={14}/> Team: {userInfo.companySize}</div>}
             </div>
          </div>
       </div>
@@ -483,8 +546,12 @@ const App: React.FC = () => {
       </div>
       <div ref={pdfRef} style={{ display: 'none', background: 'white', padding: '40px', color: '#000', fontFamily: 'sans-serif' }}>
          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '2px solid #f97316', paddingBottom: '20px' }}>
-            <div><h1 style={{ fontSize: '28px', fontWeight: '900', color: '#000', margin: 0 }}>Conscious Human Performance</h1><p style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>Official Assessment Profile</p></div>
-            <div style={{ textAlign: 'right' }}><div style={{ fontSize: '18px', fontWeight: 'bold' }}>{userInfo.name}</div><div style={{ fontSize: '12px', color: '#666' }}>{new Date().toLocaleDateString()}</div>{userInfo.occupation && <div style={{ fontSize: '12px', color: '#666' }}>{userInfo.occupation}</div>}</div>
+            <div><h1 style={{ fontSize: '28px', fontWeight: '900', color: '#000', margin: 0 }}>Conscious Human Performance</h1><p style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>{assessmentType === 'corporate' ? 'Organizational Health Profile' : 'Official Assessment Profile'}</p></div>
+            <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{userInfo.name}</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>{userInfo.companyName}</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>{new Date().toLocaleDateString()}</div>
+            </div>
          </div>
          <div style={{ display: 'flex', gap: '30px', marginBottom: '40px' }}>
              <div style={{ flex: 1 }}>
@@ -539,6 +606,7 @@ const App: React.FC = () => {
         
         {view === 'assessment' && renderAssessment()}
         {view === 'lead-capture' && renderLeadCapture()}
+        {view === 'corporate-capture' && renderCorporateCapture()}
         {view === 'results' && renderResults()}
       </main>
       <footer className="text-center text-gray-600 py-10 border-t border-white/5 text-xs font-mono">
