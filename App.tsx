@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, Suspense, useRef, useEffect } from 'react';
-import { SECTIONS } from './constants';
+import { SECTIONS, CORPORATE_SECTIONS } from './constants';
 import { Answers, Scores, Section, Lead } from './types';
 import PerformanceModelChart from './components/PerformanceModelChart';
 import GeminiInsights from './components/GeminiInsights';
@@ -102,18 +102,11 @@ const App: React.FC = () => {
     const loadQuestions = async () => {
       try {
         const loadedSections = await getQuestions();
-        setSections(loadedSections);
-        setAnswers(prev => {
-          const newAnswers: Answers = {};
-          loadedSections.forEach(section => {
-             if (prev[section.id] && prev[section.id].length === section.questions.length) {
-                newAnswers[section.id] = prev[section.id];
-             } else {
-                newAnswers[section.id] = Array(section.questions.length).fill(false);
-             }
-          });
-          return newAnswers;
-        });
+        // Only override if we are in personal mode and loaded sections exist
+        // For corporate, we stick to constants for now.
+        if (assessmentType === 'personal') {
+             setSections(loadedSections);
+        }
       } catch (err) {
         console.error("Failed to load questions", err);
       } finally {
@@ -121,13 +114,30 @@ const App: React.FC = () => {
       }
     };
     loadQuestions();
-  }, []);
+  }, [assessmentType]);
 
   useEffect(() => {
     if (view === 'admin-dashboard') {
         fetchLeads().then(setLeadsCache);
     }
   }, [view]);
+
+  // Helper to start assessment and set correct questions
+  const startAssessment = (type: 'personal' | 'corporate') => {
+    setAssessmentType(type);
+    const selectedSections = type === 'corporate' ? CORPORATE_SECTIONS : SECTIONS;
+    setSections(selectedSections);
+    
+    // Reset answers for new sections
+    const newAnswers = selectedSections.reduce((acc, section) => {
+      acc[section.id] = Array(section.questions.length).fill(false);
+      return acc;
+    }, {} as Answers);
+    setAnswers(newAnswers);
+    
+    setView('assessment');
+    setCurrentSectionIndex(0);
+  };
 
   const handleAnswerChange = (sectionId: string, questionIndex: number, isChecked: boolean) => {
     setAnswers(prev => ({
@@ -285,7 +295,7 @@ const App: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-8">
                 {/* Personal Assessment */}
                 <button 
-                    onClick={() => { setAssessmentType('personal'); setView('assessment'); }}
+                    onClick={() => startAssessment('personal')}
                     className="group relative px-10 py-6 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(249,115,22,0.4)] flex items-center gap-3 overflow-hidden ring-2 ring-orange-500/50 ring-offset-4 ring-offset-black"
                 >
                     Start Journey
@@ -294,7 +304,7 @@ const App: React.FC = () => {
                 
                 {/* Corporate Assessment (NEW) */}
                 <button 
-                    onClick={() => { setAssessmentType('corporate'); setView('assessment'); }}
+                    onClick={() => startAssessment('corporate')}
                     className="group px-10 py-6 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(30,41,59,0.4)] flex items-center gap-3 border border-slate-600 hover:border-slate-500"
                 >
                     <Building2 size={20} className="text-blue-400" />
@@ -497,7 +507,7 @@ const App: React.FC = () => {
            <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none ambient-glow"></div>
            <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[100px] pointer-events-none ambient-glow"></div>
            <h3 className="text-sm font-bold text-gray-400 mb-10 uppercase tracking-[0.2em] relative z-10 flex items-center gap-3"><Sparkles size={14} className="text-orange-500" />{previousScores ? 'Comparative Analysis' : 'Zerkers Model Visualization'}</h3>
-           <div className="relative z-10 w-full flex justify-center"><PerformanceModelChart scores={scores} previousScores={previousScores} /></div>
+           <div className="relative z-10 w-full flex justify-center"><PerformanceModelChart scores={scores} previousScores={previousScores} type={assessmentType} /></div>
         </div>
         <div className="lg:col-span-5 space-y-6">
            {/* UPDATED: Pass ID to allow saving */}
