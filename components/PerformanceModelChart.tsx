@@ -5,16 +5,17 @@ import { Scores } from '../types';
 interface PerformanceModelChartProps {
   scores: Scores;
   previousScores?: Scores | null;
+  type?: 'personal' | 'corporate';
 }
 
-const PerformanceModelChart: React.FC<PerformanceModelChartProps> = ({ scores, previousScores }) => {
+const PerformanceModelChart: React.FC<PerformanceModelChartProps> = ({ scores, previousScores, type = 'personal' }) => {
   const width = 550;
   const height = 550;
   const centerX = width / 2;
   const centerY = height / 2;
   const radius = width / 2 - 110; 
   const levels = 7;
-  const accentColor = '#f97316'; // Zerkers Orange
+  const accentColor = type === 'corporate' ? '#3b82f6' : '#f97316'; // Blue for corporate, Orange for personal
   const prevColor = '#94a3b8'; // Slate 400 for previous
 
   // --- Helper Functions ---
@@ -37,15 +38,27 @@ const PerformanceModelChart: React.FC<PerformanceModelChartProps> = ({ scores, p
   };
   
   // --- Chart Configuration ---
+  // If type is corporate, we map the labels differently based on the Zerkers Corporate Model
+  const getLabel = (key: string) => {
+      if (type !== 'corporate') return key;
+      const map: Record<string, string> = {
+          'Love': 'Culture',
+          'Career': 'Engagement',
+          'Abundance': 'Performance',
+          'Fitness': 'Wellness'
+      };
+      return map[key] || key;
+  };
+
   const coreLabelConfigs = [
-    { name: 'Energy', angle: -22.5 },
-    { name: 'Awareness', angle: 22.5 },
-    { name: 'Love', angle: 67.5 },
-    { name: 'Tribe', angle: 112.5 },
-    { name: 'Career', angle: 157.5 },
-    { name: 'Abundance', angle: 202.5 },
-    { name: 'Fitness', angle: 247.5 },
-    { name: 'Health', angle: 292.5 },
+    { key: 'Energy', angle: -22.5 },
+    { key: 'Awareness', angle: 22.5 },
+    { key: 'Love', angle: 67.5 },
+    { key: 'Tribe', angle: 112.5 },
+    { key: 'Career', angle: 157.5 },
+    { key: 'Abundance', angle: 202.5 },
+    { key: 'Fitness', angle: 247.5 },
+    { key: 'Health', angle: 292.5 },
   ];
 
   const categoryLabels = ['CONSCIOUSNESS', 'CONNECTION', 'CONTRIBUTION', 'COMMITMENT'];
@@ -56,7 +69,7 @@ const PerformanceModelChart: React.FC<PerformanceModelChartProps> = ({ scores, p
   const adventureTrackOuterRadius = radius + 85;
 
   // --- Data Calculation (Current) ---
-  const dataPoints = coreLabelConfigs.map(config => scores[config.name as keyof Scores]);
+  const dataPoints = coreLabelConfigs.map(config => scores[config.key as keyof Scores]);
   const scorePolygonPoints = dataPoints
     .map((value, i) => {
       const angle = coreLabelConfigs[i].angle;
@@ -68,7 +81,7 @@ const PerformanceModelChart: React.FC<PerformanceModelChartProps> = ({ scores, p
   // --- Data Calculation (Previous) ---
   let prevPolygonPoints = '';
   if (previousScores) {
-    const prevDataPoints = coreLabelConfigs.map(config => previousScores[config.name as keyof Scores]);
+    const prevDataPoints = coreLabelConfigs.map(config => previousScores[config.key as keyof Scores]);
     prevPolygonPoints = prevDataPoints
       .map((value, i) => {
         const angle = coreLabelConfigs[i].angle;
@@ -161,13 +174,13 @@ const PerformanceModelChart: React.FC<PerformanceModelChartProps> = ({ scores, p
         </text>
 
         {/* Axes and Core Labels */}
-        {coreLabelConfigs.map(({ name, angle }) => {
+        {coreLabelConfigs.map(({ key, angle }) => {
           const endPoint = polarToCartesian(angle, radius);
           const labelPoint = polarToCartesian(angle, coreLabelRadius);
           return (
-            <g key={`axis-${name}`}>
+            <g key={`axis-${key}`}>
               <line x1={centerX} y1={centerY} x2={endPoint.x} y2={endPoint.y} stroke="#4B5563" strokeWidth="1"/>
-              <text x={labelPoint.x} y={labelPoint.y} dy="0.3em" textAnchor="middle" fill="#D1D5DB" fontSize="12">{name}</text>
+              <text x={labelPoint.x} y={labelPoint.y} dy="0.3em" textAnchor="middle" fill="#D1D5DB" fontSize="12">{getLabel(key)}</text>
             </g>
           );
         })}
@@ -180,7 +193,7 @@ const PerformanceModelChart: React.FC<PerformanceModelChartProps> = ({ scores, p
                 <polygon points={prevPolygonPoints} fill="none" stroke={prevColor} strokeWidth="2" strokeDasharray="5,5" opacity="0.7" />
                 {/* Previous Data Points */}
                 {previousScores && coreLabelConfigs.map((config, i) => {
-                   const val = previousScores[config.name as keyof Scores];
+                   const val = previousScores[config.key as keyof Scores];
                    const angle = config.angle;
                    const { x, y } = polarToCartesian(angle, (val / levels) * radius);
                    return <circle key={`prev-point-${i}`} cx={x} cy={y} r="3" fill={prevColor} />;
@@ -189,7 +202,7 @@ const PerformanceModelChart: React.FC<PerformanceModelChartProps> = ({ scores, p
         )}
 
         {/* CURRENT Data Polygon */}
-        <polygon points={scorePolygonPoints} fill="rgba(249, 115, 22, 0.3)" stroke={accentColor} strokeWidth="3"/>
+        <polygon points={scorePolygonPoints} fill={type === 'corporate' ? "rgba(59, 130, 246, 0.3)" : "rgba(249, 115, 22, 0.3)"} stroke={accentColor} strokeWidth="3"/>
 
         {/* Current Data Points */}
         {dataPoints.map((value, i) => {
@@ -204,8 +217,8 @@ const PerformanceModelChart: React.FC<PerformanceModelChartProps> = ({ scores, p
       {previousScores && (
           <div className="flex items-center gap-6 mt-4 text-sm">
               <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-orange-500/30 border border-orange-500 rounded-sm"></div>
-                  <span className="text-orange-500 font-bold">Current</span>
+                  <div className={`w-4 h-4 ${type === 'corporate' ? 'bg-blue-500/30 border-blue-500' : 'bg-orange-500/30 border-orange-500'} border rounded-sm`}></div>
+                  <span className={`${type === 'corporate' ? 'text-blue-500' : 'text-orange-500'} font-bold`}>Current</span>
               </div>
               <div className="flex items-center gap-2">
                   <div className="w-4 h-0 border-b-2 border-dashed border-slate-400"></div>
