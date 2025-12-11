@@ -1,4 +1,3 @@
-
 export interface Question {
   text: string;
 }
@@ -32,6 +31,9 @@ export interface UserProfile {
   email: string;
   dob?: string;
   occupation?: string;
+  // Corporate Fields
+  companyName?: string;
+  companySize?: string;
   role: 'user' | 'admin';
   createdAt: string;
 }
@@ -39,6 +41,7 @@ export interface UserProfile {
 export interface Submission {
   id: string;
   userId: string;
+  type: 'personal' | 'corporate'; // New field
   userProfile: UserProfile; // Joined for easier frontend display
   timestamp: string;
   scores: Scores;
