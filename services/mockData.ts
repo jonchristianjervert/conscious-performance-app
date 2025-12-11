@@ -50,6 +50,7 @@ const generateHistory = (count: number): Submission[] => {
     submissions.push({
       id: `sub_mock_${Math.random().toString(36).substr(2, 9)}`,
       userId: `user_mock_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'personal',
       userProfile: {
         id: `user_mock_${Math.random().toString(36).substr(2, 9)}`,
         name: NAMES[Math.floor(Math.random() * NAMES.length)],
@@ -87,6 +88,7 @@ const initMockData = () => {
     const jonUser: Submission = {
         id: 'sub_jon_christian_fixed',
         userId: 'user_jon_christian',
+        type: 'personal',
         userProfile: {
             id: 'user_jon_christian',
             name: 'Jon Christian',
@@ -107,21 +109,25 @@ initMockData();
 // --- REAL DATA SERVICE FUNCTIONS ---
 
 export const submitAssessment = async (
-  user: { name: string; email: string; dob: string; occupation: string },
+  user: { name: string; email: string; dob?: string; occupation?: string; companyName?: string; companySize?: string },
   scores: Scores,
-  answers: Answers
+  answers: Answers,
+  type: 'personal' | 'corporate' = 'personal'
 ): Promise<string> => {
     // 1. REAL FIREBASE SUBMISSION
     if (isConfigured && db) {
         try {
             const submissionData = {
                 userId: `user_${user.email.replace(/[^a-zA-Z0-9]/g, '')}`,
+                type,
                 userProfile: {
                     id: `user_${user.email.replace(/[^a-zA-Z0-9]/g, '')}`,
                     name: user.name,
                     email: user.email,
-                    dob: user.dob,
-                    occupation: user.occupation,
+                    dob: user.dob || '',
+                    occupation: user.occupation || '',
+                    companyName: user.companyName || '',
+                    companySize: user.companySize || '',
                     role: 'user',
                     createdAt: new Date().toISOString()
                 },
@@ -148,12 +154,15 @@ export const submitAssessment = async (
     const newSubmission: Submission = {
         id: newId,
         userId: `user_${Date.now()}`,
+        type,
         userProfile: {
             id: `user_${Date.now()}`,
             name: user.name,
             email: user.email,
             dob: user.dob,
             occupation: user.occupation,
+            companyName: user.companyName,
+            companySize: user.companySize,
             role: 'user',
             createdAt: new Date().toISOString(),
         },
@@ -382,13 +391,14 @@ export const seedFirestore = async () => {
 export const downloadCSV = async () => {
     const subs = await fetchSubmissions(); 
     
-    const headers = ['ID', 'Name', 'Email', 'DOB', 'Occupation', 'Date', 'Energy', 'Awareness', 'Love', 'Tribe', 'Career', 'Abundance', 'Fitness', 'Health', 'Adventure'];
+    const headers = ['ID', 'Type', 'Name', 'Email', 'Company', 'Size', 'Date', 'Energy', 'Awareness', 'Love', 'Tribe', 'Career', 'Abundance', 'Fitness', 'Health', 'Adventure'];
     const rows = subs.map(s => [
         s.id,
+        s.type || 'personal',
         s.userProfile?.name || 'Unknown',
         s.userProfile?.email || 'Unknown',
-        s.userProfile?.dob || '',
-        s.userProfile?.occupation || '',
+        s.userProfile?.companyName || 'N/A',
+        s.userProfile?.companySize || 'N/A',
         new Date(s.timestamp).toLocaleDateString(),
         s.scores.Energy,
         s.scores.Awareness,
