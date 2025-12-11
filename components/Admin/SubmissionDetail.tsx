@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, User, Calendar, Smartphone, MapPin, Briefcase, Sparkles, Target } from 'lucide-react';
 import { Submission } from '../../types';
@@ -53,7 +54,14 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
 
   if (!submission) return <div className="text-gray-400 p-8">Loading details...</div>;
 
-  const profile = submission.userProfile || { name: 'Unknown', email: 'No Email', dob: '', occupation: '' };
+  const profile = submission.userProfile || { 
+    name: 'Unknown', 
+    email: 'No Email', 
+    dob: '', 
+    occupation: '',
+    companyName: '',
+    companySize: ''
+  };
   const metadata = submission.metadata || { device: 'Unknown', location: 'Unknown' };
   const scores = submission.scores || {};
   const answers = submission.answers || {};
@@ -69,26 +77,29 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
         <div className="space-y-6">
           <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center text-xl font-bold text-orange-500 border border-gray-600">
+              <div className={`w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center text-xl font-bold ${submission.type === 'corporate' ? 'text-blue-500' : 'text-orange-500'} border border-gray-600`}>
                 {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
               </div>
               <div className="overflow-hidden">
                 <h2 className="text-xl font-bold text-white truncate">{profile.name}</h2>
                 <p className="text-sm text-gray-400 truncate">{profile.email}</p>
+                {submission.type === 'corporate' && (
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-900/50 text-blue-400 border border-blue-500/20">Corporate</span>
+                )}
               </div>
             </div>
             
             <div className="space-y-3 text-sm text-gray-300">
-              {profile.occupation && (
+              {profile.companyName && (
                   <div className="flex items-center gap-3">
                     <Briefcase size={16} className="text-gray-500" />
-                    <span>{profile.occupation}</span>
+                    <span>{profile.companyName} ({profile.companySize})</span>
                   </div>
               )}
-              {profile.dob && (
+              {profile.occupation && (
                   <div className="flex items-center gap-3">
                     <User size={16} className="text-gray-500" />
-                    <span>DOB: {profile.dob}</span>
+                    <span>{profile.occupation}</span>
                   </div>
               )}
               <div className="flex items-center gap-3">
@@ -148,14 +159,14 @@ const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBac
         <div className="lg:col-span-2 space-y-6">
            {/* Chart */}
            <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 flex flex-col items-center shadow-lg relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-purple-500"></div>
+             <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${submission.type === 'corporate' ? 'from-blue-500 to-blue-300' : 'from-orange-500 to-purple-500'}`}></div>
              <h3 className="text-lg font-bold text-white mb-6 w-full text-left flex items-center gap-2">
-                <Sparkles size={16} className="text-orange-500" />
-                Performance Model
+                <Sparkles size={16} className={submission.type === 'corporate' ? "text-blue-500" : "text-orange-500"} />
+                {submission.type === 'corporate' ? 'Organizational Health Model' : 'Performance Model'}
              </h3>
              <div className="w-full flex justify-center">
                 {Object.keys(scores).length > 0 ? (
-                    <PerformanceModelChart scores={scores as any} />
+                    <PerformanceModelChart scores={scores as any} type={submission.type} />
                 ) : (
                     <div className="text-gray-500 py-10">Chart data unavailable</div>
                 )}
