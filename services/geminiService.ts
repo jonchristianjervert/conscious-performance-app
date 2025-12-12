@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Scores, Submission, DashboardMetrics } from "../types";
 
@@ -8,29 +9,57 @@ const getAIClient = () => {
     return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
-export const getInsightsFromGemini = async (scores: Scores): Promise<string> => {
+export const getInsightsFromGemini = async (scores: Scores, context?: { type: 'personal' | 'corporate', name: string, companyName?: string }): Promise<string> => {
   const ai = getAIClient();
   if (!ai) return "API key not found. Please ensure it is configured in your environment variables.";
 
-  const prompt = `
-You are a certified Conscious Human Performance Strategist, based on the model developed by Jon Christian. A user has completed the Conscious Human Performance assessment and received the following scores out of 7:
-- Energy: ${scores.Energy}
-- Awareness: ${scores.Awareness}
-- Love: ${scores.Love}
-- Tribe: ${scores.Tribe}
-- Career: ${scores.Career}
-- Abundance: ${scores.Abundance}
-- Fitness: ${scores.Fitness}
-- Health: ${scores.Health}
-- Adventure: ${scores.Adventure.toFixed(1)}
+  let prompt = '';
 
-Based on these scores, please provide personalized, encouraging, and actionable insights.
-1.  Start with a positive and empowering summary of their current state.
-2.  Identify 1-2 areas with the lowest scores as potential areas for growth.
-3.  For each identified area, provide 2-3 specific, practical, and actionable tips for improvement, in the spirit of the Conscious Human Performance model.
-4.  Keep the tone positive, non-judgmental, and focused on potential and growth, as mentioned in the assessment's introduction.
-5.  Format the response using markdown for readability (e.g., headings, bullet points).
-`;
+  if (context?.type === 'corporate') {
+      // --- CORPORATE PROMPT ---
+      prompt = `
+      You are an elite Organizational Development Consultant and Culture Strategist. You are analyzing the "Organizational Health" of a company named "${context.companyName || 'the Organization'}" based on the Zerkers Conscious Human Performance model.
+      
+      The scores below (out of 7) represent the aggregate sentiment and performance of the employees/team:
+      - Energy (Collective Vibe): ${scores.Energy}
+      - Awareness (Mindset): ${scores.Awareness}
+      - Culture (Connection): ${scores.Love}
+      - Tribe (Team Cohesion): ${scores.Tribe}
+      - Engagement (Career): ${scores.Career}
+      - Performance (Abundance): ${scores.Abundance}
+      - Wellness (Fitness): ${scores.Fitness}
+      - Health (Physical): ${scores.Health}
+      - Adventure (Innovation/Bonding): ${scores.Adventure.toFixed(1)}
+
+      Please provide a strategic executive summary for the Leadership Team.
+      1. **Executive Summary:** Start with a high-level assessment of the organization's current cultural baseline. Is this a high-performance culture or one at risk of burnout?
+      2. **Cultural Bottlenecks:** Identify 1-2 areas with the lowest scores. Explain how these specific low scores negatively impact the bottom line or employee retention.
+      3. **Strategic Recommendations:** Provide 2-3 specific, high-level organizational interventions (e.g., "Implement a structured wellness initiative," "Focus on psychological safety in meetings").
+      4. **Tone:** Professional, objective, strategic, and focused on business outcomes (Retention, ROI, Productivity). Do NOT address "you" as an individual; address the "Company" or "Employees".
+      `;
+  } else {
+      // --- PERSONAL PROMPT ---
+      prompt = `
+      You are a certified Conscious Human Performance Strategist, based on the model developed by Jon Christian. A user named ${context?.name || 'User'} has completed the assessment.
+      
+      Scores (out of 7):
+      - Energy: ${scores.Energy}
+      - Awareness: ${scores.Awareness}
+      - Love: ${scores.Love}
+      - Tribe: ${scores.Tribe}
+      - Career: ${scores.Career}
+      - Abundance: ${scores.Abundance}
+      - Fitness: ${scores.Fitness}
+      - Health: ${scores.Health}
+      - Adventure: ${scores.Adventure.toFixed(1)}
+
+      Based on these scores, please provide personalized, encouraging, and actionable insights.
+      1. Start with a positive and empowering summary of their current state.
+      2. Identify 1-2 areas with the lowest scores as potential areas for growth.
+      3. For each identified area, provide 2-3 specific, practical, and actionable tips for improvement.
+      4. Keep the tone positive, non-judgmental, and focused on potential and growth.
+      `;
+  }
 
   try {
     const response = await ai.models.generateContent({
@@ -90,16 +119,21 @@ export const generateIndividualAdminReport = async (submission: Submission): Pro
     const ai = getAIClient();
     if (!ai) return "API key missing.";
 
+    const context = submission.type === 'corporate' 
+        ? `This is a CORPORATE assessment for the company "${submission.userProfile.companyName}". Treat the scores as organizational metrics.` 
+        : `This is a PERSONAL assessment for "${submission.userProfile.name}". Treat the scores as individual performance metrics.`;
+
     const prompt = `
     You are an Admin Auditor for the Conscious Human Performance Assessment.
-    Review this specific user submission:
-    User: ${submission.userProfile.name}
+    Review this specific submission. 
+    ${context}
+    
     Scores: ${JSON.stringify(submission.scores)}
     
     Provide a private administrative note on this profile:
-    1. Is this user a "High Performer" (mostly 6s and 7s), "Balanced", or "At Risk"?
-    2. Highlight one specific score discrepancy (e.g., high Career but low Health) that indicates a potential burnout risk.
-    3. Recommended coaching approach: Should the coach push them harder or focus on restoration?
+    1. Classification: Is this ${submission.type === 'corporate' ? 'Organization' : 'Individual'} "High Performing", "Balanced", or "At Risk"?
+    2. Risk Analysis: Highlight one specific score discrepancy that indicates a potential problem (e.g. Burnout, Culture Clash).
+    3. Recommendation: What is the single most important conversation the coach should have with this client?
     
     Keep this short and internal-facing.
     `;
@@ -191,24 +225,27 @@ export const generateProgramRecommendation = async (submission: Submission): Pro
 
     CLIENT DATA:
     Name: ${submission.userProfile.name}
-    Occupation: ${submission.userProfile.occupation || "Unknown"}
+    Type: ${submission.type}
     Scores: ${JSON.stringify(submission.scores)}
 
     ZERKERS PROGRAM CATALOG:
     1. "Challenge Z.E.R.O." (Online, ~$99/mo)
-       - Ideal for: People lacking discipline, focus, or mental toughness. Low scores in Energy/Health/Fitness. Needs a system.
+       - Ideal for: Individuals lacking discipline/energy. 
     
     2. "The 5 Challenges" (Online Premium, ~$799/mo)
-       - Ideal for: Leaders who want deep mastery but can't travel yet. Needs community + accountability.
+       - Ideal for: Leaders needing deep mastery.
     
     3. "1:1 Alignment Accelerator" (Coaching, $3k-$5k/12 weeks)
-       - Ideal for: High-performing Founders/Execs who are burned out, misaligned, or "successful but empty." High Career score but low Love/Health/Adventure.
+       - Ideal for: High-performing Founders/Execs.
     
     4. "Executive Overlanding Retreat" (In-Person, 3 Days)
-       - Ideal for: Stressed executives needing a hard reset in nature. High stress indicators.
+       - Ideal for: Stressed executives.
     
-    5. "Leadership Intensive" (In-Person, 1-2 Days)
-       - Ideal for: Managers needing presence, communication skills, and EQ. Low Tribe/Connection scores.
+    5. "Corporate Culture Audit & Workshop" (B2B Consulting)
+       - Ideal for: CORPORATE submissions. Low Culture/Tribe scores.
+    
+    6. "Leadership Intensive" (In-Person)
+       - Ideal for: Managers needing EQ.
 
     OUTPUT FORMAT (HTML):
     Provide a specific recommendation in this HTML structure (no markdown):
