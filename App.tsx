@@ -9,7 +9,7 @@ import { sendSubmissionEmails } from './services/automation';
 import { getQuestions } from './services/questionService';
 import { fetchLeads } from './services/clientService';
 import MicroQualify from './components/MicroQualify'; 
-import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, Star, Activity, PlayCircle, Zap, Heart, Briefcase, Dumbbell, Mountain, CheckCircle, XCircle, ChevronDown, ChevronUp, Download, User, Calendar, Building2, Users } from 'lucide-react';
+import { ShieldCheck, Sparkles, ChevronRight, ArrowRight, ArrowLeft, Star, Activity, PlayCircle, Zap, Heart, Briefcase, Dumbbell, Mountain, CheckCircle, XCircle, ChevronDown, ChevronUp, Download, User, Calendar, Building2, Users } from 'lucide-react';
 
 // Lazy Load Admin Components
 const Login = React.lazy(() => import('./components/Admin/Login'));
@@ -234,6 +234,191 @@ const App: React.FC = () => {
     if (category.includes('COMMITMENT')) return Dumbbell;
     return Mountain;
   };
+
+  const renderWelcome = () => (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        {/* Background FX */}
+        <div className="absolute top-0 left-0 w-full h-full bg-[#050505] -z-20"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="max-w-4xl mx-auto text-center relative z-10 animate-fade-in">
+            <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter">
+                Conscious Human <span className="text-orange-500">Performance</span>
+            </h1>
+            <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
+                Measure your energetic capacity, leadership alignment, and holistic success with the Zerkers Model.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                <button 
+                    onClick={() => setView('lead-capture')}
+                    className="group relative overflow-hidden bg-gray-900 border border-white/10 p-8 rounded-2xl hover:border-orange-500/50 transition-all hover:-translate-y-1"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <User size={32} className="text-orange-500 mb-4" />
+                    <h3 className="text-2xl font-bold text-white mb-2">Personal Profile</h3>
+                    <p className="text-sm text-gray-500">For leaders, entrepreneurs, and high-performers seeking clarity.</p>
+                </button>
+
+                <button 
+                    onClick={() => setView('corporate-capture')}
+                    className="group relative overflow-hidden bg-gray-900 border border-white/10 p-8 rounded-2xl hover:border-blue-500/50 transition-all hover:-translate-y-1"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <Building2 size={32} className="text-blue-500 mb-4" />
+                    <h3 className="text-2xl font-bold text-white mb-2">Corporate Audit</h3>
+                    <p className="text-sm text-gray-500">For organizations analyzing culture, retention, and burnout risks.</p>
+                </button>
+            </div>
+            
+            <div className="mt-12">
+                 <button onClick={() => setView('admin-login')} className="text-sm text-gray-600 hover:text-white transition-colors">Admin Login</button>
+            </div>
+        </div>
+    </div>
+  );
+
+  const renderLeadCapture = () => (
+      <div className="min-h-screen flex items-center justify-center p-6">
+          <div className="glass-panel p-8 md:p-12 rounded-3xl border border-white/10 w-full max-w-lg relative z-10 animate-fade-in">
+              <button onClick={() => setView('welcome')} className="absolute top-6 left-6 text-gray-500 hover:text-white"><ArrowLeft size={20}/></button>
+              <h2 className="text-3xl font-bold text-white mb-2">Personal Profile</h2>
+              <p className="text-gray-400 mb-8">Let's setup your assessment profile.</p>
+              <form onSubmit={(e) => { e.preventDefault(); startAssessment('personal'); }} className="space-y-4">
+                  <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Full Name</label>
+                      <input type="text" required className="input-field" value={userInfo.name} onChange={e => setUserInfo({...userInfo, name: e.target.value})} />
+                  </div>
+                  <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Email</label>
+                      <input type="email" required className="input-field" value={userInfo.email} onChange={e => setUserInfo({...userInfo, email: e.target.value})} />
+                  </div>
+                  <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Occupation (Optional)</label>
+                      <input type="text" className="input-field" value={userInfo.occupation} onChange={e => setUserInfo({...userInfo, occupation: e.target.value})} />
+                  </div>
+                  <button type="submit" className="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-4 rounded-xl mt-4">Begin Assessment</button>
+              </form>
+          </div>
+      </div>
+  );
+
+  const renderCorporateCapture = () => (
+      <div className="min-h-screen flex items-center justify-center p-6">
+          <div className="glass-panel p-8 md:p-12 rounded-3xl border border-white/10 w-full max-w-lg relative z-10 animate-fade-in">
+              <button onClick={() => setView('welcome')} className="absolute top-6 left-6 text-gray-500 hover:text-white"><ArrowLeft size={20}/></button>
+              <h2 className="text-3xl font-bold text-white mb-2 text-blue-500">Corporate Audit</h2>
+              <p className="text-gray-400 mb-8">Analyze your organization's health.</p>
+              <form onSubmit={(e) => { e.preventDefault(); startAssessment('corporate'); }} className="space-y-4">
+                   <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Company Name</label>
+                      <input type="text" required className="input-field" value={userInfo.companyName} onChange={e => setUserInfo({...userInfo, companyName: e.target.value})} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Representative Name</label>
+                            <input type="text" required className="input-field" value={userInfo.name} onChange={e => setUserInfo({...userInfo, name: e.target.value})} />
+                        </div>
+                         <div>
+                            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Team Size</label>
+                            <select className="input-field" value={userInfo.companySize} onChange={e => setUserInfo({...userInfo, companySize: e.target.value})}>
+                                <option value="">Select...</option>
+                                <option value="1-10">1-10</option>
+                                <option value="11-50">11-50</option>
+                                <option value="51-200">51-200</option>
+                                <option value="200+">200+</option>
+                            </select>
+                        </div>
+                  </div>
+                  <div>
+                      <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Work Email</label>
+                      <input type="email" required className="input-field" value={userInfo.email} onChange={e => setUserInfo({...userInfo, email: e.target.value})} />
+                  </div>
+                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl mt-4">Start Audit</button>
+              </form>
+          </div>
+      </div>
+  );
+
+  const renderAssessment = () => {
+      const section = sections[currentSectionIndex];
+      const progress = ((currentSectionIndex) / sections.length) * 100;
+      
+      return (
+        <div className="min-h-screen pt-20 pb-10 px-6 max-w-4xl mx-auto">
+             {/* Progress */}
+             <div className="fixed top-0 left-0 w-full h-2 bg-gray-900 z-50">
+                 <div className={`h-full transition-all duration-500 ${assessmentType === 'corporate' ? 'bg-blue-500' : 'bg-orange-500'}`} style={{ width: `${progress}%` }}></div>
+             </div>
+
+             <div className="flex items-center justify-between mb-8">
+                 <div>
+                     <span className={`text-xs font-bold uppercase tracking-widest ${assessmentType === 'corporate' ? 'text-blue-500' : 'text-orange-500'}`}>
+                         Section {currentSectionIndex + 1} of {sections.length}
+                     </span>
+                     <h2 className="text-3xl md:text-4xl font-black text-white mt-1">{section.title}</h2>
+                     <p className="text-gray-400 mt-2">{section.category}</p>
+                 </div>
+                 <div className="hidden md:block">
+                      {getSectionIcon(section.category) && React.createElement(getSectionIcon(section.category), { size: 48, className: "text-gray-700" })}
+                 </div>
+             </div>
+
+             <div className="space-y-4 mb-12">
+                 {section.questions.map((q, idx) => (
+                     <label key={idx} className="flex items-start gap-4 p-6 bg-gray-900/50 hover:bg-gray-800 border border-white/5 rounded-2xl cursor-pointer transition-all group">
+                         <div className={`mt-1 w-6 h-6 rounded border flex items-center justify-center transition-colors ${answers[section.id]?.[idx] ? (assessmentType === 'corporate' ? 'bg-blue-500 border-blue-500' : 'bg-orange-500 border-orange-500') : 'border-gray-600 group-hover:border-gray-400'}`}>
+                             {answers[section.id]?.[idx] && <CheckCircle size={14} className="text-white" />}
+                         </div>
+                         <input 
+                            type="checkbox" 
+                            className="hidden" 
+                            checked={!!answers[section.id]?.[idx]}
+                            onChange={(e) => handleAnswerChange(section.id, idx, e.target.checked)}
+                         />
+                         <span className={`text-lg ${answers[section.id]?.[idx] ? 'text-white' : 'text-gray-400'}`}>{q.text}</span>
+                     </label>
+                 ))}
+             </div>
+
+             <div className="flex justify-between items-center bg-gray-900/80 backdrop-blur p-6 rounded-2xl border border-white/5 sticky bottom-6 shadow-2xl">
+                 <button 
+                    onClick={() => {
+                        if (currentSectionIndex > 0) {
+                            setCurrentSectionIndex(prev => prev - 1);
+                            window.scrollTo(0,0);
+                        }
+                    }}
+                    disabled={currentSectionIndex === 0}
+                    className="text-gray-400 hover:text-white disabled:opacity-30 font-bold px-6 py-3"
+                 >
+                     Back
+                 </button>
+                 
+                 {currentSectionIndex < sections.length - 1 ? (
+                     <button 
+                        onClick={() => {
+                            setCurrentSectionIndex(prev => prev + 1);
+                            window.scrollTo(0,0);
+                        }}
+                        className={`px-8 py-3 rounded-xl font-bold text-white transition-all ${assessmentType === 'corporate' ? 'bg-blue-600 hover:bg-blue-500' : 'bg-orange-600 hover:bg-orange-500'}`}
+                     >
+                         Next Section
+                     </button>
+                 ) : (
+                     <button 
+                        onClick={handleAssessmentComplete}
+                        disabled={isSubmitting}
+                        className={`px-8 py-3 rounded-xl font-bold text-white transition-all flex items-center gap-2 ${assessmentType === 'corporate' ? 'bg-blue-600 hover:bg-blue-500' : 'bg-green-600 hover:bg-green-500'}`}
+                     >
+                         {isSubmitting ? 'Analyzing...' : 'Complete Assessment'}
+                         {!isSubmitting && <ArrowRight size={18} />}
+                     </button>
+                 )}
+             </div>
+        </div>
+      );
+  };
   
   // --- RENDER LOGIC FOR ADMIN DASHBOARD ---
   if (view === 'admin-dashboard') {
@@ -274,192 +459,10 @@ const App: React.FC = () => {
     );
   }
 
-  const renderWelcome = () => (
-    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-orange-600/10 rounded-full blur-[120px] animate-pulse-glow"></div>
-            <div className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-glow" style={{animationDelay: '2s'}}></div>
-        </div>
-        <div className="relative z-10 text-center max-w-5xl mx-auto px-6 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-orange-400 text-xs font-bold uppercase tracking-widest mb-10 shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:bg-white/10 transition-colors cursor-default">
-                <Sparkles size={14} className="text-orange-500 animate-pulse" />
-                <span>The Official Zerkers Model</span>
-            </div>
-            <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white mb-8 drop-shadow-2xl">
-                <span className="text-gradient block">Conscious</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-500 block text-5xl md:text-7xl mt-2">Human Performance</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed mb-16 font-light">
-                Align your <span className="text-orange-500 font-medium glow-text-orange">Consciousness</span>, <span className="text-blue-400 font-medium">Connection</span>, <span className="text-green-400 font-medium">Contribution</span>, and <span className="text-purple-400 font-medium">Commitment</span> to unlock your highest potential.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-8">
-                {/* Personal Assessment */}
-                <button 
-                    onClick={() => startAssessment('personal')}
-                    className="group relative px-10 py-6 bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(249,115,22,0.4)] flex items-center gap-3 overflow-hidden ring-2 ring-orange-500/50 ring-offset-4 ring-offset-black"
-                >
-                    Start Journey
-                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                </button>
-                
-                {/* Corporate Assessment (NEW) */}
-                <button 
-                    onClick={() => startAssessment('corporate')}
-                    className="group px-10 py-6 bg-slate-800 hover:bg-slate-700 text-white font-bold text-lg rounded-full transition-all hover:scale-105 shadow-[0_0_40px_rgba(30,41,59,0.4)] flex items-center gap-3 border border-slate-600 hover:border-slate-500"
-                >
-                    <Building2 size={20} className="text-blue-400" />
-                    For Leaders / Orgs
-                </button>
+  // ... (Welcome Screen logic remains same)
 
-                {/* Coach Login */}
-                <button 
-                    onClick={() => setView('admin-login')} 
-                    className="px-8 py-6 bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-medium rounded-full transition-all border border-white/10 hover:border-white/30 backdrop-blur-sm flex items-center gap-2"
-                >
-                    <ShieldCheck size={18} />
-                    Coach Login
-                </button>
-            </div>
-            
-            {/* Warning Note */}
-            <div className="mb-24">
-                <div className="inline-block px-4 py-2 bg-black/50 backdrop-blur-md rounded-full border border-white/10 text-xs text-gray-400">
-                    Please wait for your coach before starting the assessment.
-                </div>
-            </div>
+  // ... (Assessment logic remains same)
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                {[
-                    { title: "Awareness", desc: "Identify blind spots in your spiritual and emotional fulfillment.", icon: Star, color: "text-orange-500" },
-                    { title: "Connection", desc: "Evaluate the strength of your relationships and tribal bonds.", icon: Activity, color: "text-blue-500" },
-                    { title: "Action", desc: "Measure your drive, career alignment, and physical vitality.", icon: PlayCircle, color: "text-green-500" }
-                ].map((item, i) => (
-                    <div key={i} className="p-8 glass-panel rounded-3xl hover:border-white/20 transition-all duration-500 hover:-translate-y-2 group">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors`}>
-                            <item.icon className={`${item.color} opacity-80 group-hover:opacity-100 transition-opacity`} size={28} />
-                        </div>
-                        <h3 className="text-white font-bold text-xl mb-3 group-hover:text-orange-400 transition-colors">{item.title}</h3>
-                        <p className="text-base text-gray-400 leading-relaxed">{item.desc}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
-    </div>
-  );
-
-  // ... rest of file (renderAssessment, renderLeadCapture, etc.) matches previous versions ...
-
-  const renderAssessment = () => {
-    if (loadingQuestions) return <div className="min-h-screen flex items-center justify-center text-orange-500">Loading Assessment...</div>;
-    const currentSection = sections[currentSectionIndex];
-    if (!currentSection) return <div>Error loading section</div>;
-    const progress = ((currentSectionIndex + 1) / sections.length) * 100;
-    const SectionIcon = getSectionIcon(currentSection.category);
-    return (
-      <div className="min-h-screen flex flex-col max-w-4xl mx-auto pt-12 px-6 pb-16 relative">
-        <div className="fixed top-0 left-0 w-full h-2 bg-gray-900/50 z-50 backdrop-blur-sm">
-            <div className="h-full bg-gradient-to-r from-orange-600 to-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.6)] transition-all duration-700 ease-out" style={{ width: `${progress}%` }}></div>
-        </div>
-        <div className="mb-12 mt-8 flex justify-between items-end">
-            <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                    <SectionIcon className="text-orange-500" size={24} />
-                </div>
-                <span className="text-orange-500 font-bold tracking-[0.2em] text-sm uppercase">{currentSection.category}</span>
-            </div>
-            <span className="text-gray-500 text-sm font-mono">{currentSectionIndex + 1} / {sections.length}</span>
-        </div>
-        <div key={currentSection.id} className="flex-1 animate-fade-in">
-          <div className="mb-10">
-              <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-2">{currentSection.title}</h2>
-              <div className="h-1 w-20 bg-orange-500 rounded-full"></div>
-          </div>
-          <div className="space-y-4">
-            {currentSection.questions.map((q, i) => (
-              <label key={i} className={`group flex items-center p-6 rounded-2xl cursor-pointer transition-all duration-300 border ${answers[currentSection.id]?.[i] ? 'bg-gradient-to-r from-orange-900/20 to-orange-900/5 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.1)] translate-x-2' : 'bg-[#121214]/60 border-white/5 hover:bg-[#1a1c23]/80 hover:border-white/10 hover:scale-[1.01]'}`}>
-                <div className={`relative flex items-center justify-center h-7 w-7 flex-shrink-0 rounded-lg border-2 transition-all duration-300 ${answers[currentSection.id]?.[i] ? 'border-orange-500 bg-orange-500' : 'border-gray-600 bg-transparent group-hover:border-gray-400'}`}>
-                    <input type="checkbox" className="appearance-none absolute inset-0 cursor-pointer" checked={answers[currentSection.id]?.[i] || false} onChange={(e) => handleAnswerChange(currentSection.id, i, e.target.checked)} />
-                    <ShieldCheck size={16} className={`text-white transform transition-transform duration-300 ${answers[currentSection.id]?.[i] ? 'scale-100' : 'scale-0'}`} />
-                </div>
-                <span className={`ml-5 text-lg md:text-xl leading-snug transition-colors ${answers[currentSection.id]?.[i] ? 'text-white font-medium' : 'text-gray-400 group-hover:text-gray-200'}`}>{q.text}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-        <div className="pt-12 mt-4 flex justify-between items-center">
-          <button onClick={() => currentSectionIndex > 0 && setCurrentSectionIndex(currentSectionIndex - 1)} disabled={currentSectionIndex === 0} className="text-gray-500 hover:text-white font-medium px-6 py-3 transition-colors disabled:opacity-0 hover:bg-white/5 rounded-xl">Previous</button>
-          {currentSectionIndex < sections.length - 1 ? (
-            <button onClick={() => setCurrentSectionIndex(currentSectionIndex + 1)} className="group bg-white text-black hover:bg-gray-200 font-bold py-4 px-10 rounded-full transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-3">Next <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" /></button>
-          ) : (
-            <button 
-                onClick={() => assessmentType === 'corporate' ? setView('corporate-capture') : setView('lead-capture')} 
-                className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold py-4 px-12 rounded-full transition-all transform hover:scale-105 shadow-[0_0_30px_rgba(249,115,22,0.5)]"
-            >
-                Complete Profile
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const renderLeadCapture = () => (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-600/20 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="glass-panel p-10 md:p-16 rounded-3xl border border-white/10 text-center animate-fade-in w-full max-w-lg relative z-10 shadow-2xl">
-            <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(249,115,22,0.4)] transform rotate-3">
-                <Sparkles className="text-white w-10 h-10" />
-            </div>
-            <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Your Profile</h2>
-            <p className="text-gray-400 mb-10 text-lg">Unlock your personalized Conscious Human Performance report.</p>
-            <form onSubmit={handleAssessmentComplete} className="space-y-6 text-left">
-                <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Full Name</label><input type="text" required className="input-field text-lg" value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} placeholder="Enter your name" /></div>
-                <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Email Address</label><input type="email" required className="input-field text-lg" value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} placeholder="name@example.com" /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Date of Birth</label><input type="date" required className="input-field text-lg" value={userInfo.dob} onChange={(e) => setUserInfo({...userInfo, dob: e.target.value})} /></div>
-                  <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Occupation</label><input type="text" required className="input-field text-lg" value={userInfo.occupation} onChange={(e) => setUserInfo({...userInfo, occupation: e.target.value})} placeholder="Role / Job" /></div>
-                </div>
-                <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold py-5 rounded-xl transition-all mt-6 shadow-[0_0_30px_rgba(249,115,22,0.3)] text-lg hover:scale-[1.02]">{isSubmitting ? 'Analyzing Data...' : 'Reveal Results'}</button>
-            </form>
-        </div>
-    </div>
-  );
-
-  const renderCorporateCapture = () => (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="glass-panel p-10 md:p-16 rounded-3xl border border-white/10 text-center animate-fade-in w-full max-w-lg relative z-10 shadow-2xl">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(59,130,246,0.4)] transform -rotate-3">
-                <Building2 className="text-white w-10 h-10" />
-            </div>
-            <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Org. Health</h2>
-            <p className="text-gray-400 mb-10 text-lg">Generate your organization's performance baseline.</p>
-            <form onSubmit={handleAssessmentComplete} className="space-y-6 text-left">
-                <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Full Name</label><input type="text" required className="input-field text-lg" value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} placeholder="Leader Name" /></div>
-                <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Work Email</label><input type="email" required className="input-field text-lg" value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} placeholder="name@company.com" /></div>
-                
-                {/* Corporate Specific Fields */}
-                <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Company Name</label><input type="text" required className="input-field text-lg" value={userInfo.companyName} onChange={(e) => setUserInfo({...userInfo, companyName: e.target.value})} placeholder="Organization Name" /></div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Your Role</label><input type="text" required className="input-field text-lg" value={userInfo.occupation} onChange={(e) => setUserInfo({...userInfo, occupation: e.target.value})} placeholder="CEO, VP, etc." /></div>
-                  <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 ml-1">Team Size</label>
-                      <select required className="input-field text-lg" value={userInfo.companySize} onChange={(e) => setUserInfo({...userInfo, companySize: e.target.value})}>
-                          <option value="">Select...</option>
-                          <option value="1-10">1-10</option>
-                          <option value="11-50">11-50</option>
-                          <option value="51-200">51-200</option>
-                          <option value="200+">200+</option>
-                      </select>
-                  </div>
-                </div>
-
-                <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-5 rounded-xl transition-all mt-6 shadow-[0_0_30px_rgba(59,130,246,0.3)] text-lg hover:scale-[1.02]">{isSubmitting ? 'Generating Report...' : 'View Corporate Insights'}</button>
-            </form>
-        </div>
-    </div>
-  );
   
   const renderResults = () => (
      <div className="max-w-7xl mx-auto pt-12 px-6 pb-20 animate-fade-in min-h-screen">
@@ -510,8 +513,15 @@ const App: React.FC = () => {
            <div className="relative z-10 w-full flex justify-center"><PerformanceModelChart scores={scores} previousScores={previousScores} type={assessmentType} /></div>
         </div>
         <div className="lg:col-span-5 space-y-6">
-           {/* UPDATED: Pass ID to allow saving */}
-           <GeminiInsights scores={scores} submissionId={currentSubmissionId || undefined} />
+           
+           {/* UPDATED: Pass Assessment Context to AI */}
+           <GeminiInsights 
+                scores={scores} 
+                submissionId={currentSubmissionId || undefined} 
+                type={assessmentType}
+                name={userInfo.name}
+                companyName={userInfo.companyName}
+           />
            
            <div className="glass-panel score-card p-8 rounded-3xl">
                 <h4 className="text-gray-400 uppercase tracking-wider text-xs font-bold mb-6">Raw Score Breakdown</h4>
@@ -528,7 +538,8 @@ const App: React.FC = () => {
            </div>
         </div>
       </div>
-      <div className="glass-panel rounded-3xl overflow-hidden mb-8 border border-white/10">
+      {/* ... Rest of Render (Show Answers / PDF) ... */}
+       <div className="glass-panel rounded-3xl overflow-hidden mb-8 border border-white/10">
           <button onClick={() => setShowAnswers(!showAnswers)} className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 transition-colors">
               <div className="flex items-center gap-3"><div className="bg-orange-500/20 p-2 rounded-lg text-orange-400"><ShieldCheck size={20} /></div><div className="text-left"><h3 className="text-white font-bold text-lg">Review Your Responses</h3><p className="text-sm text-gray-400">See your answers for each section.</p></div></div>
               {showAnswers ? <ChevronUp className="text-gray-400" /> : <ChevronDown className="text-gray-400" />}
@@ -579,23 +590,24 @@ const App: React.FC = () => {
                   </div>
              </div>
          </div>
-         <div style={{ marginBottom: '30px' }}><h3 style={{ fontSize: '16px', fontWeight: 'bold', textTransform: 'uppercase', color: '#f97316', marginBottom: '15px' }}>AI Strategic Analysis</h3><GeminiInsights scores={scores} /></div>
+         {/* Pass Context to PDF version too if possible, although prompts trigger on button click usually */}
+         <div style={{ marginBottom: '30px' }}><h3 style={{ fontSize: '16px', fontWeight: 'bold', textTransform: 'uppercase', color: '#f97316', marginBottom: '15px' }}>AI Strategic Analysis</h3><GeminiInsights scores={scores} type={assessmentType} name={userInfo.name} companyName={userInfo.companyName} /></div>
          <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '10px', color: '#999' }}>&copy; 2025 Conscious Human Performance. All Rights Reserved.</div>
       </div>
      </div>
   );
-
+  
   if (view === 'admin-login') {
     return (
       <ErrorBoundary>
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-orange-500 bg-[#050505]">Loading...</div>}>
-          <Login onLogin={() => setView('admin-dashboard')} />
-        </Suspense>
+         <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-orange-500 bg-[#050505]">Loading...</div>}>
+             <Login onLogin={() => setView('admin-dashboard')} />
+         </Suspense>
       </ErrorBoundary>
     );
   }
 
-  // --- MAIN RENDER SWITCH ---
+  // --- MAIN RENDER SWITCH (Same as before) ---
   return (
     <div className="min-h-screen selection:bg-orange-500/30 text-gray-100">
       <main>
