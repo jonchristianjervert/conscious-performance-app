@@ -239,6 +239,30 @@ export const getPreviousSubmission = async (email: string): Promise<Submission |
     return previous.length > 0 ? previous[0] : null;
 };
 
+// NEW: Fetch ALL submissions by email (Personal & Corporate)
+export const fetchSubmissionsByEmail = async (email: string): Promise<Submission[]> => {
+     if (isConfigured && db) {
+        try {
+            const q = query(
+                collection(db, 'submissions'), 
+                where('userProfile.email', '==', email)
+            );
+            const querySnapshot = await getDocs(q);
+            const docs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission));
+            // Sort: Newest First
+            return docs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        } catch (e) {
+            console.error("Error fetching user history:", e);
+            return [];
+        }
+    }
+    // Mock
+    return MOCK_SUBMISSIONS
+        .filter(s => s.userProfile.email === email)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+};
+
+
 export const fetchSubmissions = async (): Promise<Submission[]> => {
     // 1. REAL FIREBASE FETCH
     if (isConfigured && db) {
