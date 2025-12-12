@@ -1,12 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, User, Calendar, Smartphone, MapPin, Briefcase, Sparkles, Target } from 'lucide-react';
-import { Submission } from '../../types';
-import { fetchSubmissionById } from '../../services/mockData';
+import { ArrowLeft, User, Calendar, Briefcase, Sparkles, Target, Layers } from 'lucide-react';
+import { Submission, UserProfile } from '../../types';
+import { fetchSubmissionById, fetchSubmissionsByEmail } from '../../services/mockData';
 import { generateIndividualAdminReport, generateProgramRecommendation } from '../../services/geminiService';
 import { fetchSessionsByEmail } from '../../services/clientService'; 
 import PerformanceModelChart from '../PerformanceModelChart';
-import { SECTIONS } from '../../constants';
 
 interface SubmissionDetailProps {
   submissionId: string;
@@ -14,222 +13,176 @@ interface SubmissionDetailProps {
 }
 
 const SubmissionDetail: React.FC<SubmissionDetailProps> = ({ submissionId, onBack }) => {
-  const [submission, setSubmission] = useState<Submission | null>(null);
+  const [currentSubmission, setCurrentSubmission] = useState<Submission | null>(null);
+  const [history, setHistory] = useState<Submission[]>([]);
+  const [coachingSessions, setCoachingSessions] = useState<any[]>([]);
+  
   const [adminNote, setAdminNote] = useState<string>('');
   const [loadingNote, setLoadingNote] = useState(false);
   
-  // New State for Program Rec
   const [programRec, setProgramRec] = useState<string>('');
   const [loadingRec, setLoadingRec] = useState(false);
 
-  // New State for Coaching History
-  const [coachingSessions, setCoachingSessions] = useState<any[]>([]);
-
   useEffect(() => {
+    // 1. Fetch the specific ID clicked
     fetchSubmissionById(submissionId).then(async (data) => {
-        setSubmission(data || null);
-        if (data && data.userProfile && data.userProfile.email) {
-            // Fetch associated coaching sessions
+        if (!data) return;
+        setCurrentSubmission(data);
+
+        // 2. Fetch History based on email to see BOTH Personal and Corporate
+        if (data.userProfile && data.userProfile.email) {
+            const userHistory = await fetchSubmissionsByEmail(data.userProfile.email);
+            setHistory(userHistory);
+            
+            // 3. Fetch Sessions
             const sessions = await fetchSessionsByEmail(data.userProfile.email);
             setCoachingSessions(sessions);
         }
     });
   }, [submissionId]);
 
-  const handleGenerateNote = async () => {
-    if (!submission) return;
+  const handleGenerateNote = async (sub: Submission) => {
     setLoadingNote(true);
-    const note = await generateIndividualAdminReport(submission);
+    const note = await generateIndividualAdminReport(sub);
     setAdminNote(note.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br/>'));
     setLoadingNote(false);
   };
 
-  const handleGenerateRec = async () => {
-    if (!submission) return;
+  const handleGenerateRec = async (sub: Submission) => {
     setLoadingRec(true);
-    const rec = await generateProgramRecommendation(submission);
+    const rec = await generateProgramRecommendation(sub);
     setProgramRec(rec);
     setLoadingRec(false);
   };
 
-  if (!submission) return <div className="text-gray-400 p-8">Loading details...</div>;
+  if (!currentSubmission) return <div className="text-gray-400 p-8">Loading details...</div>;
 
-  const profile = submission.userProfile || { 
-    name: 'Unknown', 
-    email: 'No Email', 
-    dob: '', 
-    occupation: '',
-    companyName: '',
-    companySize: ''
-  };
-  const metadata = submission.metadata || { device: 'Unknown', location: 'Unknown' };
-  const scores = submission.scores || {};
-  const answers = submission.answers || {};
+  // Use type assertion to ensure TypeScript knows this object satisfies UserProfile structure (including optional fields)
+  const profile = currentSubmission.userProfile || { name: 'Unknown', email: 'No Email' } as UserProfile;
 
   return (
     <div className="space-y-8 animate-fade-in pb-10">
-      <button onClick={onBack} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-4">
-        <ArrowLeft size={18} /> Back to List
-      </button>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+          <button onClick={onBack} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+            <ArrowLeft size={18} /> Back to List
+          </button>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Profile & Meta */}
-        <div className="space-y-6">
-          <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-            <div className="flex items-center gap-4 mb-6">
-              <div className={`w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center text-xl font-bold ${submission.type === 'corporate' ? 'text-blue-500' : 'text-orange-500'} border border-gray-600`}>
+      {/* User Header Profile */}
+      <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center text-2xl font-bold text-white border border-gray-600">
                 {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
               </div>
-              <div className="overflow-hidden">
-                <h2 className="text-xl font-bold text-white truncate">{profile.name}</h2>
-                <p className="text-sm text-gray-400 truncate">{profile.email}</p>
-                {submission.type === 'corporate' && (
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-900/50 text-blue-400 border border-blue-500/20">Corporate</span>
-                )}
+              <div>
+                <h2 className="text-2xl font-bold text-white">{profile.name}</h2>
+                <div className="flex items-center gap-4 text-sm text-gray-400 mt-1">
+                    <span className="flex items-center gap-1"><User size={14}/> {profile.email}</span>
+                    {profile.companyName && <span className="flex items-center gap-1"><Briefcase size={14}/> {profile.companyName}</span>}
+                </div>
               </div>
             </div>
-            
-            <div className="space-y-3 text-sm text-gray-300">
-              {profile.companyName && (
-                  <div className="flex items-center gap-3">
-                    <Briefcase size={16} className="text-gray-500" />
-                    <span>{profile.companyName} ({profile.companySize})</span>
-                  </div>
-              )}
-              {profile.occupation && (
-                  <div className="flex items-center gap-3">
-                    <User size={16} className="text-gray-500" />
-                    <span>{profile.occupation}</span>
-                  </div>
-              )}
-              <div className="flex items-center gap-3">
-                <Calendar size={16} className="text-gray-500" />
-                <span>Submitted: {submission.timestamp ? new Date(submission.timestamp).toLocaleDateString() : 'Unknown'}</span>
-              </div>
+            <div className="text-right">
+                <div className="text-sm text-gray-500 font-bold uppercase tracking-wider">Total Assessments</div>
+                <div className="text-3xl font-black text-white">{history.length}</div>
             </div>
-          </div>
+      </div>
 
-          {/* Admin AI Note (Audit) */}
-          <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-white">Admin Audit</h3>
-                {!adminNote && (
-                    <button 
-                        onClick={handleGenerateNote}
-                        disabled={loadingNote}
-                        className="text-xs bg-orange-600 hover:bg-orange-500 text-white px-3 py-1.5 rounded-lg transition-colors shadow-lg shadow-orange-900/20"
-                    >
-                        {loadingNote ? 'Analyzing...' : 'Generate Audit'}
-                    </button>
-                )}
-            </div>
-            {adminNote ? (
-                <div className="bg-gray-900/50 p-4 rounded-lg text-sm text-gray-300 border border-gray-700 leading-relaxed" dangerouslySetInnerHTML={{__html: adminNote}} />
-            ) : (
-                <p className="text-xs text-gray-500 italic">Click to generate an AI audit identifying burnout risks.</p>
-            )}
-          </div>
+      {/* MULTI-VIEW: Iterate through all submissions for this user (Personal & Corporate) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {history.map((sub) => (
+              <div key={sub.id} className={`p-6 rounded-xl border relative shadow-xl ${sub.type === 'corporate' ? 'bg-blue-900/10 border-blue-500/30' : 'bg-gray-800 border-gray-700'}`}>
+                   {/* Badge */}
+                   <div className="absolute top-4 right-4">
+                       <span className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-widest ${sub.type === 'corporate' ? 'bg-blue-600 text-white' : 'bg-orange-600 text-white'}`}>
+                           {sub.type === 'corporate' ? 'Organizational' : 'Personal'}
+                       </span>
+                   </div>
 
-          {/* PROGRAM RECOMMENDATION (NEW) */}
-          <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-white flex items-center gap-2">
-                    <Target size={18} className="text-emerald-500" />
-                    Program Match
-                </h3>
-                {!programRec && (
-                    <button 
-                        onClick={handleGenerateRec}
-                        disabled={loadingRec}
-                        className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition-colors shadow-lg shadow-emerald-900/20"
-                    >
-                        {loadingRec ? 'Matching...' : 'Find Program'}
-                    </button>
-                )}
-            </div>
-            {programRec ? (
-                <div className="bg-gray-900/50 p-4 rounded-lg text-sm text-gray-300 border border-gray-700 leading-relaxed" dangerouslySetInnerHTML={{__html: programRec}} />
-            ) : (
-                <p className="text-xs text-gray-500 italic">AI-driven recommendation based on Zerkers offerings.</p>
-            )}
-          </div>
-        </div>
+                   <div className="mb-6">
+                       <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Assessment Date</div>
+                       <div className="flex items-center gap-2 text-white font-medium">
+                           <Calendar size={16} /> {new Date(sub.timestamp).toLocaleDateString()}
+                       </div>
+                   </div>
 
-        {/* Right Column */}
-        <div className="lg:col-span-2 space-y-6">
-           {/* Chart */}
-           <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 flex flex-col items-center shadow-lg relative overflow-hidden">
-             <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${submission.type === 'corporate' ? 'from-blue-500 to-blue-300' : 'from-orange-500 to-purple-500'}`}></div>
-             <h3 className="text-lg font-bold text-white mb-6 w-full text-left flex items-center gap-2">
-                <Sparkles size={16} className={submission.type === 'corporate' ? "text-blue-500" : "text-orange-500"} />
-                {submission.type === 'corporate' ? 'Organizational Health Model' : 'Performance Model'}
-             </h3>
-             <div className="w-full flex justify-center">
-                {Object.keys(scores).length > 0 ? (
-                    <PerformanceModelChart scores={scores as any} type={submission.type} />
-                ) : (
-                    <div className="text-gray-500 py-10">Chart data unavailable</div>
-                )}
-             </div>
-           </div>
-
-           {/* COACHING HISTORY (From Previous Request) */}
-           {coachingSessions.length > 0 && (
-               <div className="bg-blue-900/10 border border-blue-500/20 rounded-xl p-6">
-                   <h3 className="text-blue-400 font-bold uppercase tracking-widest text-xs mb-4">Coaching Session History</h3>
-                   <div className="space-y-4">
-                       {coachingSessions.map((session: any) => (
-                           <div key={session.id} className="bg-gray-900/50 p-4 rounded-lg border border-white/5">
-                               <div className="flex justify-between items-start mb-2">
-                                   <div className="text-white font-bold text-sm">Session Date: {new Date(session.date).toLocaleDateString()}</div>
-                                   <div className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase font-bold">{session.status}</div>
-                               </div>
-                               <div className="grid grid-cols-2 gap-4 text-xs text-gray-400">
-                                   <div>
-                                       <span className="block text-gray-500 font-bold">Focus:</span>
-                                       {session.notes?.goals || 'No goals recorded'}
-                                   </div>
-                                   {session.activationPlan && (
-                                       <div>
-                                           <span className="block text-gray-500 font-bold">Plan Mantra:</span>
-                                           <span className="italic text-orange-400">"{session.activationPlan.mantra}"</span>
-                                       </div>
-                                   )}
-                               </div>
+                   {/* Chart */}
+                   <div className="bg-black/20 p-4 rounded-xl mb-6 flex justify-center">
+                       <div className="transform scale-90">
+                           <PerformanceModelChart scores={sub.scores} type={sub.type} />
+                       </div>
+                   </div>
+                   
+                   {/* Scores Grid */}
+                   <div className="grid grid-cols-3 gap-2 mb-6">
+                       {Object.entries(sub.scores).slice(0, 9).map(([key, val]) => (
+                           <div key={key} className="bg-white/5 p-2 rounded text-center border border-white/5">
+                               <div className="text-[9px] text-gray-500 uppercase">{key}</div>
+                               <div className={`font-bold ${Number(val) >= 6 ? 'text-green-400' : 'text-gray-200'}`}>{Number(val).toFixed(1)}</div>
                            </div>
                        ))}
                    </div>
-               </div>
-           )}
 
-           {/* Client's AI Report */}
-           {submission.aiSummary ? (
-               <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl border border-gray-700 relative overflow-hidden shadow-lg">
-                   <div className="flex items-center gap-2 mb-4 relative z-10">
-                       <Sparkles size={20} className="text-blue-400" />
-                       <h3 className="text-lg font-bold text-white">Client's Generated AI Report</h3>
+                   {/* Actions for this specific card */}
+                   <div className="flex gap-2 mb-6">
+                       <button 
+                           onClick={() => handleGenerateNote(sub)}
+                           className="flex-1 text-xs bg-gray-700 hover:bg-gray-600 text-white py-2 rounded transition-colors"
+                       >
+                           Analyze {sub.type === 'corporate' ? 'Org' : 'Personal'} Risks
+                       </button>
                    </div>
-                   <div className="bg-black/30 p-5 rounded-lg border border-white/5 text-gray-300 text-sm max-h-80 overflow-y-auto custom-scrollbar relative z-10 prose prose-invert max-w-none">
-                       <div dangerouslySetInnerHTML={{ __html: submission.aiSummary }} />
+                   
+                   {/* AI Report for this specific submission */}
+                   <div className="bg-black/30 p-4 rounded-lg border border-white/5 max-h-64 overflow-y-auto custom-scrollbar">
+                       <div className="flex items-center gap-2 mb-2">
+                           <Sparkles size={14} className={sub.type === 'corporate' ? "text-blue-400" : "text-orange-400"} />
+                           <h4 className="text-sm font-bold text-gray-300">AI Assessment Summary</h4>
+                       </div>
+                       {sub.aiSummary ? (
+                           <div className="prose prose-invert prose-sm text-xs text-gray-400" dangerouslySetInnerHTML={{ __html: sub.aiSummary }} />
+                       ) : (
+                           <p className="text-xs text-gray-500 italic">No summary generated yet.</p>
+                       )}
                    </div>
-               </div>
-           ) : null}
+              </div>
+          ))}
+      </div>
 
-           {/* Scores & Answers (Existing Code) */}
-           <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                <h3 className="text-lg font-bold text-white mb-4">Raw Score Data</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {Object.keys(scores).length > 0 ? Object.entries(scores).map(([key, val]) => (
-                        <div key={key} className="bg-gray-900 p-3 rounded-lg border border-gray-700 flex flex-col items-center justify-center text-center">
-                            <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">{key}</div>
-                            <div className={`text-xl font-black ${typeof val === 'number' && val >= 6 ? 'text-green-400' : typeof val === 'number' && val >= 4 ? 'text-orange-400' : 'text-red-400'}`}>
-                                {typeof val === 'number' ? val.toFixed(1) : String(val)}
-                            </div>
-                        </div>
-                    )) : <div className="col-span-4 text-center text-gray-500 text-sm">No scores recorded.</div>}
+      {/* Common Admin Tools (Applied to Context) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Admin Audit Tool */}
+            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-white">Admin Audit Log</h3>
                 </div>
-           </div>
-        </div>
+                {adminNote ? (
+                    <div className="bg-gray-900/50 p-4 rounded-lg text-sm text-gray-300 border border-gray-700 leading-relaxed" dangerouslySetInnerHTML={{__html: adminNote}} />
+                ) : (
+                    <p className="text-xs text-gray-500 italic">Select an assessment above to generate a risk audit.</p>
+                )}
+            </div>
+
+            {/* Coaching History */}
+            <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <h3 className="font-bold text-white mb-4">Coaching Sessions</h3>
+                {coachingSessions.length > 0 ? (
+                    <div className="space-y-3">
+                        {coachingSessions.map((session: any) => (
+                           <div key={session.id} className="bg-gray-900/50 p-3 rounded-lg border border-white/5 text-sm">
+                               <div className="flex justify-between text-gray-400 text-xs mb-1">
+                                   <span>{new Date(session.date).toLocaleDateString()}</span>
+                                   <span className="uppercase text-green-500 font-bold">{session.status}</span>
+                               </div>
+                               <div className="text-white font-medium truncate">{session.notes?.goals || 'Strategy Session'}</div>
+                           </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-xs text-gray-500 italic">No coaching sessions recorded.</p>
+                )}
+            </div>
       </div>
     </div>
   );
